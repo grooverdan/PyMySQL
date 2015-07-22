@@ -10,7 +10,7 @@ env:
     - TOX_ENV=pypy3
 
 addons:
-   mariadb: 10.1
+   mariadb: 10.0
 
 install:
     - pip install -U tox
