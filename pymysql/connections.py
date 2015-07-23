@@ -841,8 +841,13 @@ class Connection(object):
                         def writable(self):
                              return len(self.buffer) > 0
 
+                        def readable(self):
+                             return len(self.buffer) == 0
+
                         def sendall(self, b):
-                             return self.socket.sendall(b)
+                             self.buffer += b
+                             self.handle_write()
+                             return None
 
                         # avoid all the deprecation warnings
 
