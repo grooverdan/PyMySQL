@@ -832,7 +832,7 @@ class Connection(object):
                         def __init__(self, family):
                              asyncore.dispatcher.__init__(self)
                              self.create_socket(family, socket.SOCK_STREAM)
-                             self.buffer=''
+                             self.buffer=b''
 
                         def handle_write(self):
                              sent = self.send(self.buffer)
