@@ -91,13 +91,14 @@ class TestAuthentication(base.PyMySQLTestCase):
         try:
             cur.execute("install plugin auth_socket soname 'auth_socket.so'")
             socket_found = True
-            socket_plugin_name = 'auth_socket'
+            self.socket_plugin_name = 'auth_socket'
+            print("plugin " + self.socket_plugin_name + " installed running test")
             self.testSocketAuth()
         except pymysql.err.InternalError:
             try:
                 cur.execute("install soname 'auth_socket'")
                 socket_found = True
-                socket_plugin_name = 'unix_socket'
+                self.socket_plugin_name = 'unix_socket'
                 self.testSocketAuth()
             except pymysql.err.InternalError:
                 socket_found = False
