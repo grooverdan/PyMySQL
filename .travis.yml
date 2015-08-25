@@ -65,3 +65,7 @@ before_script:
     - "mysql -e 'select VERSION();'"
 
 script: tox -e $TOX_ENV
+
+
+after_failure:
+    - cat /tmp/mysql.err
