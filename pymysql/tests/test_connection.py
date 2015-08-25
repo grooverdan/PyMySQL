@@ -129,7 +129,7 @@ class TestAuthentication(base.PyMySQLTestCase):
             return self.m.get(prompt)
 
     @unittest2.skipIf(socket_auth, "connection to unix_socket required")
-    @unittest2.skipIf(two_questions_found, "no two questions auth plugin")
+    @unittest2.skipUnless(two_questions_found, "no two questions auth plugin")
     def testDialogAuthTwoQuestions(self):
         TestAuthentication.Dialog.fail=False
         TestAuthentication.Dialog.m = {'Password, please:': b'notverysecret',
@@ -139,7 +139,7 @@ class TestAuthentication(base.PyMySQLTestCase):
             pymysql.connect(user='pymysql_test_two_questions', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
 
     @unittest2.skipIf(socket_auth, "connection to unix_socket required")
-    @unittest2.skipIf(three_attempts_found, "no three attempts plugin")
+    @unittest2.skipUnless(three_attempts_found, "no three attempts plugin")
     def testDialogAuthThreeAttempts(self):
         TestAuthentication.Dialog.m = {'Password, please:': b'stillnotverysecret'}
         TestAuthentication.Dialog.fail=True   # fail just once. We've got three attempts after all
