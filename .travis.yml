@@ -5,15 +5,14 @@ cache:
     directories:
         - mysql
 
-
-#env:
-#    matrix:
-#        - TOX_ENV=py26
-#        - TOX_ENV=py27
-#        - TOX_ENV=py33
-#        - TOX_ENV=py34
-#        - TOX_ENV=pypy
-#        - TOX_ENV=pypy3
+env:
+    matrix:
+        - TOX_ENV=py26
+        - TOX_ENV=py27
+        - TOX_ENV=py33
+        - TOX_ENV=py34
+        - TOX_ENV=pypy
+        - TOX_ENV=pypy3
 
 matrix:
     include:
@@ -34,6 +33,7 @@ matrix:
                  packages:
                      - libaio-dev
 # really only need libaio1 however libaio-dev is whitelisted
+#
 # http://dev.mysql.com/downloads/mysql/5.7.html
 #        - env:
 #             - TOX_ENV=py34
