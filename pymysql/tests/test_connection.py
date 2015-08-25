@@ -105,7 +105,7 @@ class TestAuthentication(base.PyMySQLTestCase):
         finally:
             if socket_found:
                 cur = self.connections[0].cursor()
-                cur.execute("uninstall plugin '%s'" % socket_plugin_name)
+                cur.execute("uninstall plugin %s" % socket_plugin_name)
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(socket_found, "no socket plugin")
