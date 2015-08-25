@@ -37,6 +37,7 @@ class TempUser:
 
 class TestAuthentication(base.PyMySQLTestCase):
 
+    socket_auth = False
     socket_found = False
     two_questions_found = False
     three_attempts_found = False
@@ -48,13 +49,11 @@ class TestAuthentication(base.PyMySQLTestCase):
         import os
         self.user = os.environ.get('USER')
         # socket auth requires the current user and for the connection to be a socket
-        # pam is easier if its a socket
+        # rest do grants @localhost due to incomplete logic - TODO change to @% then
         self.db = self.databases[0].copy()
 
-        if not (self.db.get('unix_socket') is not None
-                and self.db.get('host') in ('localhost', '127.0.0.1')):
-            addSkip('testAuthPlugins', 'Need an OS user and running on a socket')
-            return
+        socket_auth = self.db.get('unix_socket') is not None \
+                      and self.db.get('host') in ('localhost', '127.0.0.1')
 
         cur = pymysql.connect(**self.db).cursor()
         del self.db['user']
@@ -85,6 +84,7 @@ class TestAuthentication(base.PyMySQLTestCase):
         # Bit of an assumption that the current user is a native password
         self.assertEqual('mysql_native_password', self.connections[0].get_plugin_name())
 
+    @unittest2.skipIf(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(socket_found, "socket plugin already installed")
     def testSocketAuthInstallPlugin(self):
         # needs plugin. lets install it.
@@ -108,6 +108,7 @@ class TestAuthentication(base.PyMySQLTestCase):
                 cur = self.connections[0].cursor()
                 cur.execute("uninstall soname 'auth_socket'")
 
+    @unittest2.skipIf(socket_auth, "connection to unix_socket required")
     @unittest2.skipIf(socket_found, "no socket plugin")
     def testSocketAuth(self):
         with TempUser(self.connections[0].cursor(), self.user + '@localhost',
@@ -127,6 +128,7 @@ class TestAuthentication(base.PyMySQLTestCase):
                return 'bad guess at a password'
             return self.m.get(prompt)
 
+    @unittest2.skipIf(socket_auth, "connection to unix_socket required")
     @unittest2.skipIf(two_questions_found, "no two questions auth plugin")
     def testDialogAuthTwoQuestions(self):
         TestAuthentication.Dialog.fail=False
@@ -136,6 +138,7 @@ class TestAuthentication(base.PyMySQLTestCase):
                       self.databases[0]['db'], 'two_questions', 'notverysecret') as u:
             pymysql.connect(user='pymysql_test_two_questions', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
 
+    @unittest2.skipIf(socket_auth, "connection to unix_socket required")
     @unittest2.skipIf(three_attempts_found, "no three attempts plugin")
     def testDialogAuthThreeAttempts(self):
         TestAuthentication.Dialog.m = {'Password, please:': b'stillnotverysecret'}
@@ -144,6 +147,7 @@ class TestAuthentication(base.PyMySQLTestCase):
                       self.databases[0]['db'], 'three_attempts', 'stillnotverysecret') as u:
             pymysql.connect(user='pymysql_test_three_attempts', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
 
+    @unittest2.skipIf(socket_auth, "connection to unix_socket required")
     @unittest2.skipIf(pam_found, "no pam plugin")
     def testPamAuth(self):
         db = self.db.copy()
