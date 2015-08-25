@@ -46,6 +46,7 @@ class TestAuthentication(base.PyMySQLTestCase):
 
     import os
     osuser = os.environ.get('USER')
+    print("OS User %r\n" % osuser)
 
     # socket auth requires the current user and for the connection to be a socket
     # rest do grants @localhost due to incomplete logic - TODO change to @% then

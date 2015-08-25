@@ -44,6 +44,7 @@ install:
     - pip install -U tox
 
 before_script:
+    - env
     - if [ ! -z "${DB}" ]; then
           F=mysql-${DB}-linux-glibc2.5-x86_64;
           mkdir -p ${HOME}/mysql;
