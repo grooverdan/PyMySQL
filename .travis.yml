@@ -55,13 +55,13 @@ before_script:
               wget http://cdn.mysql.com/Downloads/MySQL-${DB%.*}/${F}.tar.gz -O - | tar -zxf - --directory=${HOME}/mysql ;
           fi;
           if [ -f "${P}"/my.cnf ]; then
-              O=--defaults-file=${P}/my.cnf ;
+              O="--defaults-file=${P}/my.cnf" ;
           fi;
           if [ -x "${P}"/scripts/mysql_install_db ]; then
               I=${P}/scripts/mysql_install_db ;
           else
-              I=${P}/bin/mysqld ;
-              O= ${O} --initialize ;
+              I=${P}/bin/mysqld;
+              O=" ${O} --no-defaults --initialize " ;
           fi;
           ${I} ${O} --basedir=${P} --datadir=${HOME}/db-"${DB}" --log-error=/tmp/mysql.err;
           if [ -x ${P}/bin/mysql_ssl_rsa_setup ]; then
