@@ -90,21 +90,21 @@ class TestAuthentication(base.PyMySQLTestCase):
         cur = self.connections[0].cursor()
         try:
             cur.execute("install plugin auth_socket soname 'auth_socket.so'")
-            socket_found = True
+            TestAuthentication.socket_found = True
             self.socket_plugin_name = 'auth_socket'
             print("plugin " + self.socket_plugin_name + " installed running test")
             self.testSocketAuth()
         except pymysql.err.InternalError:
             try:
                 cur.execute("install soname 'auth_socket'")
-                socket_found = True
+                TestAuthentication.socket_found = True
                 self.socket_plugin_name = 'unix_socket'
                 self.testSocketAuth()
             except pymysql.err.InternalError:
                 socket_found = False
                 raise unittest2.SkipTest('we couldn\'t install the socket plugin')
         finally:
-            if socket_found:
+            if TestAuthentication.socket_found:
                 cur = self.connections[0].cursor()
                 cur.execute("uninstall plugin %s" % self.socket_plugin_name)
 
