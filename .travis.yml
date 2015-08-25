@@ -29,11 +29,11 @@ matrix:
         - env:
              - TOX_ENV=py34
              - DB=5.6.26
-          sudo: required
           addons:
               apt:
                  packages:
-                     - libaio1
+                     - libaio-dev
+# really only need libaio1 however libaio-dev is whitelisted
 # http://dev.mysql.com/downloads/mysql/5.7.html
 #        - env:
 #             - TOX_ENV=py34
@@ -45,7 +45,6 @@ install:
 
 before_script:
     - if [ ! -z "${DB}" ]; then
-          sudo apt-get install libaio1;
           F=mysql-${DB}-linux-glibc2.5-x86_64;
           mkdir -p ${HOME}/mysql;
           P=${HOME}/mysql/${F} ;
