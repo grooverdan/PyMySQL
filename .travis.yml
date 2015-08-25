@@ -29,6 +29,7 @@ matrix:
         - env:
              - TOX_ENV=py34
              - DB=5.6.26
+          sudo: required
           addons:
               apt:
                  packages:
@@ -37,6 +38,8 @@ matrix:
 #             - TOX_ENV=py34
 #             - DB=5.7.8-rc
 
+before_install:
+    - sudo apt-get install libaio libaio1
 install:
     - pip install -U tox
 
