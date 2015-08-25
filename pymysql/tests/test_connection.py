@@ -46,8 +46,6 @@ class TestAuthentication(base.PyMySQLTestCase):
 
     import os
     osuser = os.environ.get('USER')
-    print("OS User %r\n" % osuser)
-    print("OS environment %r\n" % os.environ)
 
     # socket auth requires the current user and for the connection to be a socket
     # rest do grants @localhost due to incomplete logic - TODO change to @% then
@@ -94,7 +92,6 @@ class TestAuthentication(base.PyMySQLTestCase):
             cur.execute("install plugin auth_socket soname 'auth_socket.so'")
             TestAuthentication.socket_found = True
             self.socket_plugin_name = 'auth_socket'
-            print("plugin " + self.socket_plugin_name + " installed running test %r" % TestAuthentication.osuser)
             self.realtestSocketAuth()
         except pymysql.err.InternalError:
             try:

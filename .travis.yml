@@ -66,8 +66,6 @@ before_script:
     - "mysql -e 'select VERSION();'"
 
 script:
-    - env
-    - export USER=${USER}
     - tox -e $TOX_ENV
 
 after_failure:
