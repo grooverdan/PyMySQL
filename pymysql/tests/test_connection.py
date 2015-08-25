@@ -19,6 +19,7 @@ class TempUser:
             c.execute(create)
             self._created = True
         except pymysql.err.InternalError:
+            # already exists - TODO need to check the same plugin applies
             self._created = False
         try:
             c.execute("GRANT SELECT ON %s.* TO %s" % (db, user))
@@ -43,77 +44,75 @@ class TestAuthentication(base.PyMySQLTestCase):
     three_attempts_found = False
     pam_found = False
 
-    def __init__(self, *args, **kwargs):
-        super(TestAuthentication, self).__init__(*args, **kwargs)
+    import os
+    osuser = os.environ.get('USER')
 
-        import os
-        self.user = os.environ.get('USER')
-        # socket auth requires the current user and for the connection to be a socket
-        # rest do grants @localhost due to incomplete logic - TODO change to @% then
-        self.db = self.databases[0].copy()
+    # socket auth requires the current user and for the connection to be a socket
+    # rest do grants @localhost due to incomplete logic - TODO change to @% then
+    db = base.PyMySQLTestCase.databases[0].copy()
 
-        socket_auth = self.db.get('unix_socket') is not None \
-                      and self.db.get('host') in ('localhost', '127.0.0.1')
+    socket_auth = db.get('unix_socket') is not None \
+                  and db.get('host') in ('localhost', '127.0.0.1')
 
-        cur = pymysql.connect(**self.db).cursor()
-        del self.db['user']
-        cur.execute("SHOW PLUGINS")
-        for r in cur:
-            if (r[1], r[2], r[3]) ==  (u'ACTIVE', u'AUTHENTICATION', u'auth_socket.so'):
-                self.socket_plugin_name = r[0]
-                socket_found = True
-            if (r[1], r[2], r[3]) ==  (u'ACTIVE', u'AUTHENTICATION', u'dialog_examples.so'):
-                if r[0] == 'two_questions':
-                    two_questions_found =  True
-                elif r[0] == 'three_attempts':
-                    three_attempts_found =  True
-            if (r[0], r[1], r[2]) ==  (u'pam', u'ACTIVE', u'AUTHENTICATION'):
-                pam_found = True
-                self.pam_plugin_name = r[3].split('.')[0]
-                if self.pam_plugin_name == 'auth_pam':
-                    self.pam_plugin_name = 'pam'
-                # MySQL: authentication_pam
-                # https://dev.mysql.com/doc/refman/5.5/en/pam-authentication-plugin.html
+    cur = pymysql.connect(**db).cursor()
+    del db['user']
+    cur.execute("SHOW PLUGINS")
+    for r in cur:
+        if (r[1], r[2], r[3]) ==  (u'ACTIVE', u'AUTHENTICATION', u'auth_socket.so'):
+            socket_plugin_name = r[0]
+            socket_found = True
+        if (r[1], r[2], r[3]) ==  (u'ACTIVE', u'AUTHENTICATION', u'dialog_examples.so'):
+            if r[0] == 'two_questions':
+                two_questions_found =  True
+            elif r[0] == 'three_attempts':
+                three_attempts_found =  True
+        if (r[0], r[1], r[2]) ==  (u'pam', u'ACTIVE', u'AUTHENTICATION'):
+            pam_found = True
+            pam_plugin_name = r[3].split('.')[0]
+            if pam_plugin_name == 'auth_pam':
+                pam_plugin_name = 'pam'
+            # MySQL: authentication_pam
+            # https://dev.mysql.com/doc/refman/5.5/en/pam-authentication-plugin.html
 
-                # MariaDB: pam
-                # https://mariadb.com/kb/en/mariadb/pam-authentication-plugin/
+            # MariaDB: pam
+            # https://mariadb.com/kb/en/mariadb/pam-authentication-plugin/
 
-                # Names differ but functionality is close
+            # Names differ but functionality is close
 
     def test_plugin(self):
         # Bit of an assumption that the current user is a native password
         self.assertEqual('mysql_native_password', self.connections[0].get_plugin_name())
 
-    @unittest2.skipIf(socket_auth, "connection to unix_socket required")
-    @unittest2.skipUnless(socket_found, "socket plugin already installed")
+    @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
+    @unittest2.skipIf(socket_found, "socket plugin already installed")
     def testSocketAuthInstallPlugin(self):
         # needs plugin. lets install it.
         cur = self.connections[0].cursor()
         try:
             cur.execute("install plugin auth_socket soname 'auth_socket.so'")
             socket_found = True
-            self.socket_plugin_name = 'auth_socket'
+            socket_plugin_name = 'auth_socket'
             self.testSocketAuth()
         except pymysql.err.InternalError:
             try:
                 cur.execute("install soname 'auth_socket'")
                 socket_found = True
-                self.socket_plugin_name = 'unix_socket'
+                socket_plugin_name = 'unix_socket'
                 self.testSocketAuth()
             except pymysql.err.InternalError:
                 socket_found = False
-                addSkip('testSocketAuth', 'we couldn\'t install a plugin')
+                raise unittest2.SkipTest('we couldn\'t install the socket plugin')
         finally:
             if socket_found:
                 cur = self.connections[0].cursor()
                 cur.execute("uninstall soname 'auth_socket'")
 
-    @unittest2.skipIf(socket_auth, "connection to unix_socket required")
-    @unittest2.skipIf(socket_found, "no socket plugin")
+    @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
+    @unittest2.skipUnless(socket_found, "no socket plugin")
     def testSocketAuth(self):
-        with TempUser(self.connections[0].cursor(), self.user + '@localhost',
+        with TempUser(self.connections[0].cursor(), self.osuser + '@localhost',
                       self.databases[0]['db'], self.socket_plugin_name) as u:
-            c = pymysql.connect(user=self.user, **self.db)
+            c = pymysql.connect(user=self.osuser, **self.db)
 
     class Dialog(object):
         fail=False
@@ -128,7 +127,7 @@ class TestAuthentication(base.PyMySQLTestCase):
                return 'bad guess at a password'
             return self.m.get(prompt)
 
-    @unittest2.skipIf(socket_auth, "connection to unix_socket required")
+    @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(two_questions_found, "no two questions auth plugin")
     def testDialogAuthTwoQuestions(self):
         TestAuthentication.Dialog.fail=False
@@ -138,7 +137,7 @@ class TestAuthentication(base.PyMySQLTestCase):
                       self.databases[0]['db'], 'two_questions', 'notverysecret') as u:
             pymysql.connect(user='pymysql_test_two_questions', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
 
-    @unittest2.skipIf(socket_auth, "connection to unix_socket required")
+    @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(three_attempts_found, "no three attempts plugin")
     def testDialogAuthThreeAttempts(self):
         TestAuthentication.Dialog.m = {'Password, please:': b'stillnotverysecret'}
@@ -147,14 +146,20 @@ class TestAuthentication(base.PyMySQLTestCase):
                       self.databases[0]['db'], 'three_attempts', 'stillnotverysecret') as u:
             pymysql.connect(user='pymysql_test_three_attempts', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
 
-    @unittest2.skipIf(socket_auth, "connection to unix_socket required")
-    @unittest2.skipIf(pam_found, "no pam plugin")
+    @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
+    @unittest2.skipUnless(pam_found, "no pam plugin")
     def testPamAuth(self):
         db = self.db.copy()
         db['password'] = 'bad guess at password'
-        with TempUser(self.connections[0].cursor(), self.user + '@localhost',
+        with TempUser(self.connections[0].cursor(), self.osuser + '@localhost',
                       self.databases[0]['db'], self.pam_plugin_name) as u:
-            c = pymysql.connect(user=self.user, **db)
+            try:
+               c = pymysql.connect(user=self.osuser, **db)
+            except pymysql.OperationalError as e:
+               self.assertEqual(1045, e.args[0])
+               return
+            # else we had 'bad guess at password' work with pam. Well cool
+
 
 class TestConnection(base.PyMySQLTestCase):
 
