@@ -3,7 +3,7 @@ language: python
 python: "3.4"
 cache:
     directories:
-        - mysql
+        - ${HOME}/mysql
 
 env:
     matrix:
