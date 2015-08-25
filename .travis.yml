@@ -36,11 +36,11 @@ install:
     - pip install -U tox
     - if [ ! -z "${DB}" ]; then
           F=mysql-${DB}-linux-glibc2.5-x86_64;
-          wget http://cdn.mysql.com/Downloads/MySQL-${DB%.*}/${F}.tar.gz --directory-prefix=~/mysql/ -nc ;
-          P=~/mysql/${F} ;
-          [ -d  ${P} ] || tar -zxf ${P}.tar.gz --directory=~/mysql ;
-          ${P}/scripts/mysql_install_db --basedir=${P} --datadir=~/db-"${DB}" ;
-          ${P}/bin/mysqld_safe --ledir=/ --mysqld=${P}/bin/mysqld  --datadir= ~/db-${DB} --socket=/tmp/mysql.sock --port 3307 --innodb-buffer-pool-size=200M  --lc-messages-dir=${P}/share --plugin-dir=${P}/lib/plugin/ &
+          wget http://cdn.mysql.com/Downloads/MySQL-${DB%.*}/${F}.tar.gz --directory-prefix=${HOME}/mysql/ -nc ;
+          P=${HOME}/mysql/${F} ;
+          [ -d  ${P} ] || tar -zxf ${P}.tar.gz --directory=${HOME}/mysql ;
+          ${P}/scripts/mysql_install_db --basedir=${P} --datadir=${HOME}/db-"${DB}" ;
+          ${P}/bin/mysqld_safe --ledir=/ --mysqld=${P}/bin/mysqld  --datadir= ${HOME}/db-${DB} --socket=/tmp/mysql.sock --port 3307 --innodb-buffer-pool-size=200M  --lc-messages-dir=${P}/share --plugin-dir=${P}/lib/plugin/ &
           mysql -S /tmp/mysql.sock "create user ${USER}@localhost; create user ${USER}@'%'; grant all on *.* to  ${USER}@localhost WITH GRANT OPTION;grant all on *.* to  ${USER}@'%' WITH GRANT OPTION;";
       fi
           
