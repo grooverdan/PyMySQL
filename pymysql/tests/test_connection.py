@@ -114,9 +114,9 @@ class TestAuthentication(base.PyMySQLTestCase):
         self.realtestSocketAuth()
 
     def realtestSocketAuth(self):
-        with TempUser(self.connections[0].cursor(), self.osuser + '@localhost',
+        with TempUser(self.connections[0].cursor(), TestAuthentication.osuser + '@localhost',
                       self.databases[0]['db'], self.socket_plugin_name) as u:
-            c = pymysql.connect(user=self.osuser, **self.db)
+            c = pymysql.connect(user=TestAuthentication.osuser, **self.db)
 
     class Dialog(object):
         fail=False
@@ -155,10 +155,10 @@ class TestAuthentication(base.PyMySQLTestCase):
     def testPamAuth(self):
         db = self.db.copy()
         db['password'] = 'bad guess at password'
-        with TempUser(self.connections[0].cursor(), self.osuser + '@localhost',
+        with TempUser(self.connections[0].cursor(), TestAuthentication.osuser + '@localhost',
                       self.databases[0]['db'], self.pam_plugin_name) as u:
             try:
-               c = pymysql.connect(user=self.osuser, **db)
+               c = pymysql.connect(user=TestAuthentication.osuser, **db)
             except pymysql.OperationalError as e:
                self.assertEqual(1045, e.args[0])
                return
