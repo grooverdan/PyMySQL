@@ -5,10 +5,6 @@ cache:
     directories:
         - mysql
 
-addons:
-    apt:
-       package:
-           - libaio1
 
 #env:
 #    matrix:
@@ -33,6 +29,10 @@ matrix:
         - env:
              - TOX_ENV=py34
              - DB=5.6.26
+          addons:
+              apt:
+                 packages:
+                     - libaio1
 #        - env:
 #             - TOX_ENV=py34
 #             - DB=5.7.8-rc
