@@ -34,6 +34,7 @@ matrix:
               apt:
                  packages:
                      - libaio1
+# http://dev.mysql.com/downloads/mysql/5.7.html
 #        - env:
 #             - TOX_ENV=py34
 #             - DB=5.7.8-rc
@@ -46,6 +47,7 @@ before_script:
     - if [ ! -z "${DB}" ]; then
           sudo apt-get install libaio1;
           F=mysql-${DB}-linux-glibc2.5-x86_64;
+          mkdir -p ${HOME}/mysql;
           P=${HOME}/mysql/${F} ;
           if [ ! -d "${P}" ]; then
               wget http://cdn.mysql.com/Downloads/MySQL-${DB%.*}/${F}.tar.gz -O - | tar -zxf - --directory=${HOME}/mysql ;
