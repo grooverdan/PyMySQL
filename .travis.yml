@@ -31,7 +31,7 @@ matrix:
           addons:
               apt:
                  package:
-                     - libaio
+                     - libaio1
 #        - env:
 #             - TOX_ENV=py34
 #             - DB=5.7.8-rc
