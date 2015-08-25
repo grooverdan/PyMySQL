@@ -37,7 +37,7 @@ install:
     - if [ ! -z "${DB}" ]; then
           F=mysql-${DB}-linux-glibc2.5-x86_64;
           wget http://cdn.mysql.com/Downloads/MySQL-${DB%.*}/${F}.tar.gz --directory-prefix=~/mysql/ -nc ;
-          P=~/mysql/${F}
+          P=~/mysql/${F} ;
           [ -d  ${P} ] || tar -zxf ${P}.tar.gz --directory=~/mysql ;
           ${P}/scripts/mysql_install_db --basedir=${P} --datadir=~/db-"${DB}" ;
           ${P}/bin/mysqld_safe --ledir=/ --mysqld=${P}/bin/mysqld  --datadir= ~/db-${DB} --socket=/tmp/mysql.sock --port 3307 --innodb-buffer-pool-size=200M  --lc-messages-dir=${P}/share --plugin-dir=${P}/lib/plugin/ &
@@ -46,8 +46,8 @@ install:
           
 
 before_script:
-    - [ -z "${DB}" } && cp .travis.databases.json pymysql/tests/databases.json
-    - [ ! -z "${DB}" ] && sed -e 's/3306/3307/' -e 's:/var/run/mysql/mysql.sock:/tmp/mysql.sock:' .travis.databases.json > pymysql/tests/databases.json
+    - [ -z ${DB} ] && cp .travis.databases.json pymysql/tests/databases.json
+    - [ ! -z ${DB} ] && sed -e 's/3306/3307/' -e 's:/var/run/mysql/mysql.sock:/tmp/mysql.sock:' .travis.databases.json > pymysql/tests/databases.json
     - "mysql -e 'create database test_pymysql  DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;'"
     - "mysql -e 'create database test_pymysql2 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;'"
     - "mysql -e 'select VERSION();'"
