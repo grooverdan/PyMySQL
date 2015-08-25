@@ -43,6 +43,7 @@ class TestAuthentication(base.PyMySQLTestCase):
     two_questions_found = False
     three_attempts_found = False
     pam_found = False
+    mysql_old_password_found = False
 
     import os
     osuser = os.environ.get('USER')
@@ -61,12 +62,12 @@ class TestAuthentication(base.PyMySQLTestCase):
         if (r[1], r[2], r[3]) ==  (u'ACTIVE', u'AUTHENTICATION', u'auth_socket.so'):
             socket_plugin_name = r[0]
             socket_found = True
-        if (r[1], r[2], r[3]) ==  (u'ACTIVE', u'AUTHENTICATION', u'dialog_examples.so'):
+        elif (r[1], r[2], r[3]) ==  (u'ACTIVE', u'AUTHENTICATION', u'dialog_examples.so'):
             if r[0] == 'two_questions':
                 two_questions_found =  True
             elif r[0] == 'three_attempts':
                 three_attempts_found =  True
-        if (r[0], r[1], r[2]) ==  (u'pam', u'ACTIVE', u'AUTHENTICATION'):
+        elif (r[0], r[1], r[2]) ==  (u'pam', u'ACTIVE', u'AUTHENTICATION'):
             pam_found = True
             pam_plugin_name = r[3].split('.')[0]
             if pam_plugin_name == 'auth_pam':
@@ -78,6 +79,8 @@ class TestAuthentication(base.PyMySQLTestCase):
             # https://mariadb.com/kb/en/mariadb/pam-authentication-plugin/
 
             # Names differ but functionality is close
+        elif (r[0], r[1], r[2]) ==  (u'mysql_old_password', u'ACTIVE', u'AUTHENTICATION'):
+            mysql_old_password_found = True
 
     def test_plugin(self):
         # Bit of an assumption that the current user is a native password
@@ -163,6 +166,21 @@ class TestAuthentication(base.PyMySQLTestCase):
                return
             # else we had 'bad guess at password' work with pam. Well cool
 
+    # set old_passwords=1; select old_password('crummy password'), @@old_passwords;
+    # +---------------------------------+-----------------+
+    # | old_password('crummy password') | @@old_passwords |
+    # +---------------------------------+-----------------+
+    # | 2a01785203b08770                |               1 |
+    # +---------------------------------+-----------------+
+    @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
+    @unittest2.skipUnless(mysql_old_password_found, "no mysql_old_password plugin")
+    def testMySQLOldPasswordAuth(self):
+        db = self.db.copy()
+        db['password'] = 'crummy password'
+        with TempUser(self.connections[0].cursor(), 'mysql_old_pass_user@localhost',
+                      self.databases[0]['db'], 'mysql_old_password', '2a01785203b08770') as u:
+            cur = pymysql.connect(user='mysql_old_pass_user', **db).cursor()
+            cur.execute("SELECT VERSION()")
 
 class TestConnection(base.PyMySQLTestCase):
 

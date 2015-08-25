@@ -148,7 +148,7 @@ def _scramble(password, message):
 
 def _my_crypt(message1, message2):
     length = len(message1)
-    result = ''
+    result = b''
     for i in range_type(length):
         x = (struct.unpack('B', message1[i:i+1])[0] ^
              struct.unpack('B', message2[i:i+1])[0])
@@ -1088,9 +1088,9 @@ class Connection(object):
 
         if auth_packet.is_auth_switch_request():
             # https://dev.mysql.com/doc/internals/en/connection-phase-packets.html#packet-Protocol::AuthSwitchRequest
-            if self.server_capabilities & CLIENT.PLUGIN_AUTH:
-                auth_packet.read_uint8() # 0xfe packet identifier
-                plugin_name = auth_packet.read_string()
+            auth_packet.read_uint8() # 0xfe packet identifier
+            plugin_name = auth_packet.read_string()
+            if self.server_capabilities & CLIENT.PLUGIN_AUTH and plugin_name is not None:
                 auth_packet = self._process_auth(plugin_name, auth_packet)
             else:
                 # send legacy handshake
