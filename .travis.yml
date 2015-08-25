@@ -38,6 +38,8 @@ matrix:
 
 install:
     - pip install -U tox
+
+before_script:
     - if [ ! -z "${DB}" ]; then
           F=mysql-${DB}-linux-glibc2.5-x86_64;
           wget http://cdn.mysql.com/Downloads/MySQL-${DB%.*}/${F}.tar.gz --directory-prefix=${HOME}/mysql/ -nc ;
@@ -46,14 +48,9 @@ install:
           ${P}/scripts/mysql_install_db --basedir=${P} --datadir=${HOME}/db-"${DB}" ;
           ${P}/bin/mysqld_safe --ledir=/ --mysqld=${P}/bin/mysqld  --datadir= ${HOME}/db-${DB} --socket=/tmp/mysql.sock --port 3307 --innodb-buffer-pool-size=200M  --lc-messages-dir=${P}/share --plugin-dir=${P}/lib/plugin/ &
           mysql -S /tmp/mysql.sock "create user ${USER}@localhost; create user ${USER}@'%'; grant all on *.* to  ${USER}@localhost WITH GRANT OPTION;grant all on *.* to  ${USER}@'%' WITH GRANT OPTION;";
-      fi
-          
-
-before_script:
-    - if [ -z "${DB}" ]; then
-          cp .travis.databases.json pymysql/tests/databases.json;
-      else
           sed -e 's/3306/3307/' -e 's:/var/run/mysql/mysql.sock:/tmp/mysql.sock:' .travis.databases.json > pymysql/tests/databases.json;
+      else
+          cp .travis.databases.json pymysql/tests/databases.json;
       fi
     - "mysql -e 'create database test_pymysql  DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;'"
     - "mysql -e 'create database test_pymysql2 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;'"
