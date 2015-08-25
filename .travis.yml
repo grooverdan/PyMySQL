@@ -54,11 +54,11 @@ before_script:
           if [ ! -d "${P}" ]; then
               wget http://cdn.mysql.com/Downloads/MySQL-${DB%.*}/${F}.tar.gz -O - | tar -zxf - --directory=${HOME}/mysql ;
           fi;
-          if [ -f ${P}/my.cnf ]; then
+          if [ -f "${P}"/my.cnf ]; then
               O=--defaults-file=${P}/my.cnf ;
           fi;
-          if [ -x ${P}/scripts/mysql_install_db ]; then
-              I=${P}/scripts/mysql_install_db ${O}
+          if [ -x "${P}"/scripts/mysql_install_db ]; then
+              I=${P}/scripts/mysql_install_db ${O};
           else
               I=${P}/bin/mysqld --initialize;
           fi;
