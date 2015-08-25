@@ -65,7 +65,7 @@ before_script:
           ${I} --basedir=${P} --datadir=${HOME}/db-"${DB}" --log-error=/tmp/mysql.err;
           if [ -x ${P}/bin/mysql_ssl_rsa_setup ]; then
               ${P}/bin/mysql_ssl_rsa_setup --datadir=${HOME}/db-"${DB}";
-          fi
+          fi;
           ${P}/bin/mysqld_safe ${O} --ledir=/ --mysqld=${P}/bin/mysqld  --datadir=${HOME}/db-${DB} --socket=/tmp/mysql.sock --port 3307 --innodb-buffer-pool-size=200M  --lc-messages-dir=${P}/share --plugin-dir=${P}/lib/plugin/ --log-error=/tmp/mysql.err &
           sleep 5; cat /tmp/mysql.err;
           mysql -S /tmp/mysql.sock "create user ${USER}@localhost; create user ${USER}@'%'; grant all on *.* to  ${USER}@localhost WITH GRANT OPTION;grant all on *.* to  ${USER}@'%' WITH GRANT OPTION;";
