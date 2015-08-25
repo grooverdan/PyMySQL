@@ -33,18 +33,18 @@ matrix:
           addons:
               apt:
                  packages:
-                     - libaio
+                     - libaio1
 #        - env:
 #             - TOX_ENV=py34
 #             - DB=5.7.8-rc
 
 before_install:
-    - sudo apt-get install libaio libaio1
 install:
     - pip install -U tox
 
 before_script:
     - if [ ! -z "${DB}" ]; then
+          sudo apt-get install libaio1;
           F=mysql-${DB}-linux-glibc2.5-x86_64;
           P=${HOME}/mysql/${F} ;
           if [ ! -f ${P}.tar.gz ]; then
