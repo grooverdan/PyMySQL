@@ -93,13 +93,13 @@ class TestAuthentication(base.PyMySQLTestCase):
             TestAuthentication.socket_found = True
             self.socket_plugin_name = 'auth_socket'
             print("plugin " + self.socket_plugin_name + " installed running test")
-            self.testSocketAuth()
+            self.realtestSocketAuth()
         except pymysql.err.InternalError:
             try:
                 cur.execute("install soname 'auth_socket'")
                 TestAuthentication.socket_found = True
                 self.socket_plugin_name = 'unix_socket'
-                self.testSocketAuth()
+                self.realtestSocketAuth()
             except pymysql.err.InternalError:
                 socket_found = False
                 raise unittest2.SkipTest('we couldn\'t install the socket plugin')
@@ -111,6 +111,9 @@ class TestAuthentication(base.PyMySQLTestCase):
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(socket_found, "no socket plugin")
     def testSocketAuth(self):
+        self.realtestSocketAuth()
+
+    def realtestSocketAuth(self):
         with TempUser(self.connections[0].cursor(), self.osuser + '@localhost',
                       self.databases[0]['db'], self.socket_plugin_name) as u:
             c = pymysql.connect(user=self.osuser, **self.db)
