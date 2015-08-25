@@ -51,7 +51,8 @@ class TestAuthentication(base.PyMySQLTestCase):
         # pam is easier if its a socket
         self.db = self.databases[0].copy()
 
-        if not (self.db['unix_socket'] and self.db['host'] in ('localhost', '127.0.0.1')):
+        if not (self.db.get('unix_socket') is not None
+                and self.db.get('host') in ('localhost', '127.0.0.1')):
             addSkip('testAuthPlugins', 'Need an OS user and running on a socket')
             return
 
