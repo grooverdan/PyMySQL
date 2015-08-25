@@ -62,9 +62,10 @@ before_script:
               O="--defaults-file=${P}/my.cnf" ;
           else
               I=${P}/bin/mysqld;
-              O="--no-defaults --initialize " ;
+              IO=" --initialize " ;
+              O="--no-defaults " ;
           fi;
-          ${I} ${O} --basedir=${P} --datadir=${HOME}/db-"${DB}" --log-error=/tmp/mysql.err;
+          ${I} ${O} ${IO} --basedir=${P} --datadir=${HOME}/db-"${DB}" --log-error=/tmp/mysql.err;
           if [ -x ${P}/bin/mysql_ssl_rsa_setup ]; then
               ${P}/bin/mysql_ssl_rsa_setup --datadir=${HOME}/db-"${DB}";
           fi;
