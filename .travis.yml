@@ -4,6 +4,8 @@ python: "3.4"
 cache:
     directories:
         - ${HOME}/mysql
+    pip: true
+
 
 env:
     matrix:
@@ -32,6 +34,8 @@ matrix:
               apt:
                  packages:
                      - libaio-dev
+          python:
+             - 3.3
         - env:
              - TOX_ENV=py34
              - DB=5.7.8-rc
@@ -39,6 +43,8 @@ matrix:
               apt:
                  packages:
                      - libaio-dev
+          python:
+             - 3.4
 # http://dev.mysql.com/downloads/mysql/5.7.html
 # really only need libaio1 however libaio-dev is whitelisted
 
