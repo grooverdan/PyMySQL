@@ -1,9 +1,9 @@
 #!/bin/bash
 
 #debug
-set +x
+set -x
 #verbose
-set +v
+set -v
 
 if [ ! -z "${DB}" ]; then
     F=mysql-${DB}-linux-glibc2.5-x86_64
@@ -33,11 +33,11 @@ if [ ! -z "${DB}" ]; then
     sleep 5
     cat /tmp/mysql.err
     if [ ! -z "${PASSWD}" ]; then
-        ${P}/bin/mysql -S /tmp/mysql.sock -u root -p"${PASSWD}" -e "SET PASSWORD = PASSWORD('')"
+        ${P}/bin/mysql -S /tmp/mysql.sock -u root -p"${PASSWD}" --connect-expired-password -e "SET PASSWORD = PASSWORD('')"
     fi
     mysql -S /tmp/mysql.sock -u root "create user ${USER}@localhost identified by ''; create user ${USER}@'%' identified by ''; grant all on *.* to  ${USER}@localhost WITH GRANT OPTION;grant all on *.* to  ${USER}@'%' WITH GRANT OPTION;"
     sed -e 's/3306/3307/g' -e 's:/var/run/mysqld/mysqld.sock:/tmp/mysql.sock:g' .travis.databases.json > pymysql/tests/databases.json
-    echo -e '[client]\nsocket = /tmp/mysql.sock\n' > "${HOME}"/.my.cnf 
+    echo -e "[client]\nsocket = /tmp/mysql.sock\n" > "${HOME}"/.my.cnf 
 else
     cp .travis.databases.json pymysql/tests/databases.json
 fi
