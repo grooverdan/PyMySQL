@@ -1,6 +1,7 @@
 import datetime
 import time
 import warnings
+import sys
 
 import pymysql
 from pymysql.tests import base
@@ -76,7 +77,7 @@ class TestOldIssues(base.PyMySQLTestCase):
             warnings.filterwarnings("ignore")
             c.execute("drop table if exists test")
         c.execute("""CREATE TABLE `test` (`station` int(10) NOT NULL DEFAULT '0', `dh`
-datetime NOT NULL DEFAULT '0000-00-00 00:00:00', `echeance` int(1) NOT NULL
+datetime NOT NULL DEFAULT '2015-01-01 00:00:00', `echeance` int(1) NOT NULL
 DEFAULT '0', `me` double DEFAULT NULL, `mo` double DEFAULT NULL, PRIMARY
 KEY (`station`,`dh`,`echeance`)) ENGINE=MyISAM DEFAULT CHARSET=latin1;""")
         try:
@@ -418,21 +419,37 @@ class TestGitHubIssues(base.PyMySQLTestCase):
 
         # test single insert and select
         cur = conn.cursor()
-        cur.execute(sql, args=values)
+        if sys.version_info[0:2] >= (3,2) and self.mysql_server_is(conn, (5, 7, 0)):
+            with self.assertWarns(pymysql.err.Warning) as cm:
+                cur.execute(sql, args=values)
+        else:
+            cur.execute(sql, args=values)
         cur.execute("select * from issue364")
         self.assertEqual(cur.fetchone(), tuple(values))
 
         # test single insert unicode query
-        cur.execute(usql, args=values)
+        if sys.version_info[0:2] >= (3,2) and self.mysql_server_is(conn, (5, 7, 0)):
+            with self.assertWarns(pymysql.err.Warning) as cm:
+                cur.execute(usql, args=values)
+        else:
+            cur.execute(usql, args=values)
 
         # test multi insert and select
-        cur.executemany(sql, args=(values, values, values))
+        if sys.version_info[0:2] >= (3,2) and self.mysql_server_is(conn, (5, 7, 0)):
+            with self.assertWarns(pymysql.err.Warning) as cm:
+                cur.executemany(sql, args=(values, values, values))
+        else:
+            cur.executemany(sql, args=(values, values, values))
         cur.execute("select * from issue364")
         for row in cur.fetchall():
             self.assertEqual(row, tuple(values))
 
         # test multi insert with unicode query
-        cur.executemany(usql, args=(values, values, values))
+        if sys.version_info[0:2] >= (3,2) and self.mysql_server_is(conn, (5, 7, 0)):
+            with self.assertWarns(pymysql.err.Warning) as cm:
+                cur.executemany(usql, args=(values, values, values))
+        else:
+            cur.executemany(usql, args=(values, values, values))
 
     def test_issue_363(self):
         """ Test binary / geometry types. """
@@ -445,16 +462,30 @@ class TestGitHubIssues(base.PyMySQLTestCase):
             "ENGINE=MyISAM default charset=utf8")
 
         cur = conn.cursor()
-        cur.execute("INSERT INTO issue363 (id, geom) VALUES ("
-                    "1998, GeomFromText('LINESTRING(1.1 1.1,2.2 2.2)'))")
+        # FYI - not sure of 5.7.0 version
+        if sys.version_info[0:2] >= (3,2) and self.mysql_server_is(conn, (5, 7, 0)):
+            with self.assertWarns(pymysql.err.Warning) as cm:
+                cur.execute("INSERT INTO issue363 (id, geom) VALUES ("
+                            "1998, GeomFromText('LINESTRING(1.1 1.1,2.2 2.2)'))")
+        else:
+            cur.execute("INSERT INTO issue363 (id, geom) VALUES ("
+                        "1998, GeomFromText('LINESTRING(1.1 1.1,2.2 2.2)'))")
 
         # select WKT
-        cur.execute("SELECT AsText(geom) FROM issue363")
+        if sys.version_info[0:2] >= (3,2) and self.mysql_server_is(conn, (5, 7, 0)):
+            with self.assertWarns(pymysql.err.Warning) as cm:
+                cur.execute("SELECT AsText(geom) FROM issue363")
+        else:
+            cur.execute("SELECT AsText(geom) FROM issue363")
         row = cur.fetchone()
         self.assertEqual(row, ("LINESTRING(1.1 1.1,2.2 2.2)", ))
 
         # select WKB
-        cur.execute("SELECT AsBinary(geom) FROM issue363")
+        if sys.version_info[0:2] >= (3,2) and self.mysql_server_is(conn, (5, 7, 0)):
+            with self.assertWarns(pymysql.err.Warning) as cm:
+                cur.execute("SELECT AsBinary(geom) FROM issue363")
+        else:
+            cur.execute("SELECT AsBinary(geom) FROM issue363")
         row = cur.fetchone()
         self.assertEqual(row,
                          (b"\x01\x02\x00\x00\x00\x02\x00\x00\x00"
