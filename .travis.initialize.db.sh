@@ -1,5 +1,10 @@
 #!/bin/bash
 
+#debug
+set +x
+#verbose
+set +v
+
 if [ ! -z "${DB}" ]; then
     F=mysql-${DB}-linux-glibc2.5-x86_64
     mkdir -p ${HOME}/mysql
