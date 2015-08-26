@@ -22,7 +22,7 @@ from .converters import (
     escape_item, encoders, decoders, escape_string, through)
 from .cursors import Cursor
 from .optionfile import Parser
-from .util import byte2int, int2byte
+from .util import byte2int, int2byte, lenenc_int
 from . import err
 
 try:
@@ -136,7 +136,7 @@ def dump_packet(data):
 
 def _scramble(password, message):
     if not password:
-        return b'\0'
+        return b''
     if DEBUG: print('password=' + str(password))
     stage1 = sha_new(password).digest()
     stage2 = sha_new(stage1).digest()
@@ -149,7 +149,7 @@ def _scramble(password, message):
 
 def _my_crypt(message1, message2):
     length = len(message1)
-    result = struct.pack('B', length)
+    result = ''
     for i in range_type(length):
         x = (struct.unpack('B', message1[i:i+1])[0] ^
              struct.unpack('B', message2[i:i+1])[0])
@@ -303,6 +303,14 @@ class MysqlPacket(object):
         self._position += 8
         return result
 
+    def read_string(self):
+        end_pos = self._data.find(b'\0', self._position)
+        if end_pos < 0:
+            return None
+        result = self._data[self._position:end_pos]
+        self._position = end_pos + 1
+        return result
+
     def read_length_encoded_integer(self):
         """Read a 'Length Coded Binary' number from the data buffer.
 
@@ -341,6 +349,10 @@ class MysqlPacket(object):
 
     def is_ok_packet(self):
         return self._data[0:1] == b'\0'
+
+    def is_auth_switch_request(self):
+        # http://dev.mysql.com/doc/internals/en/connection-phase-packets.html#packet-Protocol::AuthSwitchRequest
+        return self._data[0:1] == b'\xfe'
 
     def is_eof_packet(self):
         # http://dev.mysql.com/doc/internals/en/generic-response-packets.html#packet-EOF_Packet
@@ -507,7 +519,8 @@ class Connection(object):
                  connect_timeout=None, ssl=None, read_default_group=None,
                  compress=None, named_pipe=None, no_delay=None,
                  autocommit=False, db=None, passwd=None, local_infile=False,
-                 max_allowed_packet=16*1024*1024, defer_connect=False):
+                 max_allowed_packet=16*1024*1024, defer_connect=False,
+                 plugin_map={}):
         """
         Establish a connection to the MySQL database. Accepts several
         arguments:
@@ -544,6 +557,11 @@ class Connection(object):
         max_allowed_packet: Max size of packet sent to server in bytes. (default: 16MB)
         defer_connect: Don't explicitly connect on contruction - wait for connect call.
             (default: False)
+        plugin_map: Map of plugin names to a class that processes that plugin. The class
+            will take the Connection object as the argument to the constructor. The class
+            needs an authenticate method taking an authentication packet as an argument.
+            For the dialog plugin, a prompt(echo, prompt) method can be used (if no
+            authenticate method) for returning a string from the user.
 
         db: Alias for database. (for compatibility to MySQLdb)
         passwd: Alias for password. (for compatibility to MySQLdb)
@@ -651,6 +669,7 @@ class Connection(object):
         self.sql_mode = sql_mode
         self.init_command = init_command
         self.max_allowed_packet = max_allowed_packet
+        self.plugin_map = plugin_map
         if not defer_connect:
             self.connect()
 
@@ -685,6 +704,7 @@ class Connection(object):
     def autocommit(self, value):
         self.autocommit_mode = bool(value)
         current = self.get_autocommit()
+        self.next_packet = 1
         if value != current:
             self._send_autocommit_mode()
 
@@ -770,6 +790,7 @@ class Connection(object):
     def query(self, sql, unbuffered=False):
         # if DEBUG:
         #     print("DEBUG: sending query:", sql)
+        self.next_packet = 1
         if isinstance(sql, text_type) and not (JYTHON or IRONPYTHON):
             if PY2:
                 sql = sql.encode(self.encoding)
@@ -777,6 +798,7 @@ class Connection(object):
                 sql = sql.encode(self.encoding, 'surrogateescape')
         self._execute_command(COMMAND.COM_QUERY, sql)
         self._affected_rows = self._read_query_result(unbuffered=unbuffered)
+        self.next_packet = 1
         return self._affected_rows
 
     def next_result(self, unbuffered=False):
@@ -845,6 +867,8 @@ class Connection(object):
                 sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
             self.socket = sock
             self._rfile = _makefile(sock, 'rb')
+            self.next_packet = 0
+
             self._get_server_information()
             self._request_authentication()
 
@@ -884,6 +908,17 @@ class Connection(object):
             # So just reraise it.
             raise
 
+    def write_packet(self, data):
+        """Writes an entire "mysql packet" in its entirety to the network
+        addings its length and sequence number. Intended for use by plugins
+        only.
+        """
+        data = pack_int24(len(data)) + int2byte(self.next_packet) + data
+        if DEBUG: dump_packet(data)
+
+        self._write_bytes(data)
+        self.next_packet = (self.next_packet + 1) % 256
+
     def _read_packet(self, packet_type=MysqlPacket):
         """Read an entire "mysql packet" in its entirety from the network
         and return a MysqlPacket type that represents the results.
@@ -894,12 +929,21 @@ class Connection(object):
             if DEBUG: dump_packet(packet_header)
             btrl, btrh, packet_number = struct.unpack('<HBB', packet_header)
             bytes_to_read = btrl + (btrh << 16)
-            #TODO: check sequence id
             recv_data = self._read_bytes(bytes_to_read)
             if DEBUG: dump_packet(recv_data)
             buff += recv_data
+            # https://dev.mysql.com/doc/internals/en/sending-more-than-16mbyte.html
+            if bytes_to_read == 0xffffff:
+                continue
             if bytes_to_read < MAX_PACKET_LEN:
                 break
+        if packet_number != self.next_packet:
+            pass
+            #TODO: check sequence id
+            #raise err.InternalError("Packet sequence number wrong - got %d expected %d" %
+            #    (packet_number, self.next_packet))
+
+        self.next_packet = (packet_number + 1) % 256
         packet = packet_type(buff, self.encoding)
         packet.check_error()
         return packet
@@ -968,6 +1012,7 @@ class Connection(object):
         self._write_bytes(prelude + sql[:chunk_size-1])
         if DEBUG: dump_packet(prelude + sql)
 
+        self.next_packet = 1
         if chunk_size < self.max_allowed_packet:
             return
 
@@ -983,8 +1028,10 @@ class Connection(object):
             if not sql and chunk_size < self.max_allowed_packet:
                 break
             seq_id += 1
+        self.next_packet = seq_id%256
 
     def _request_authentication(self):
+        # https://dev.mysql.com/doc/internals/en/connection-phase-packets.html#packet-Protocol::HandshakeResponse
         self.client_flag |= CLIENT.CAPABILITIES
         if self.server_version.startswith('5'):
             self.client_flag |= CLIENT.MULTI_RESULTS
@@ -998,14 +1045,8 @@ class Connection(object):
 
         data_init = struct.pack('<iIB23s', self.client_flag, 1, charset_id, b'')
 
-        next_packet = 1
-
-        if self.ssl:
-            data = pack_int24(len(data_init)) + int2byte(next_packet) + data_init
-            next_packet += 1
-
-            if DEBUG: dump_packet(data)
-            self._write_bytes(data)
+        if self.ssl and self.server_capabilities & CLIENT.SSL:
+            self.write_packet(data_init)
 
             cert_reqs = ssl.CERT_NONE if self.ca is None else ssl.CERT_REQUIRED
             self.socket = ssl.wrap_socket(self.socket, keyfile=self.key,
@@ -1015,31 +1056,105 @@ class Connection(object):
                                           ca_certs=self.ca)
             self._rfile = _makefile(self.socket, 'rb')
 
-        data = data_init + self.user + b'\0' + \
-            _scramble(self.password.encode('latin1'), self.salt)
+        data = data_init + self.user + b'\0'
 
-        if self.db:
+        authresp = ''
+        if self.plugin_name == 'mysql_native_password':
+            authresp = _scramble(self.password.encode('latin1'), self.salt)
+
+        if self.server_capabilities & CLIENT.PLUGIN_AUTH_LENENC_CLIENT_DATA:
+            data += lenenc_int(len(authresp))
+            data += authresp
+        elif self.server_capabilities & CLIENT.SECURE_CONNECTION:
+            length = len(authresp)
+            data += struct.pack('B', length)
+            data += authresp
+        else:
+            data += authresp + b'\0'
+
+        if self.db and self.server_capabilities & CLIENT.CONNECT_WITH_DB:
             if isinstance(self.db, text_type):
                 self.db = self.db.encode(self.encoding)
-            data += self.db + int2byte(0)
+            data += self.db + b'\0'
 
-        data = pack_int24(len(data)) + int2byte(next_packet) + data
-        next_packet += 2
+        if self.server_capabilities & CLIENT.PLUGIN_AUTH:
+            data += self.plugin_name.encode('latin1') + b'\0'
 
-        if DEBUG: dump_packet(data)
-        self._write_bytes(data)
+        self.write_packet(data)
 
         auth_packet = self._read_packet()
 
-        # if old_passwords is enabled the packet will be 1 byte long and
-        # have the octet 254
+        # if authentication method isn't accepted the first byte
+        # will have the octet 254
 
-        if auth_packet.is_eof_packet():
-            # send legacy handshake
-            data = _scramble_323(self.password.encode('latin1'), self.salt) + b'\0'
-            data = pack_int24(len(data)) + int2byte(next_packet) + data
-            self._write_bytes(data)
-            auth_packet = self._read_packet()
+        if auth_packet.is_auth_switch_request():
+            # https://dev.mysql.com/doc/internals/en/connection-phase-packets.html#packet-Protocol::AuthSwitchRequest
+            if self.server_capabilities & CLIENT.PLUGIN_AUTH:
+                auth_packet.read_uint8() # 0xfe packet identifier
+                plugin_name = auth_packet.read_string()
+                auth_packet = self._process_auth(plugin_name, auth_packet)
+            else:
+                # send legacy handshake
+                data = _scramble_323(self.password.encode('latin1'), self.salt) + b'\0'
+                self.write_packet(data)
+                auth_packet = self._read_packet()
+
+    def _process_auth(self, plugin_name, auth_packet):
+        plugin_class = self.plugin_map.get(plugin_name)
+        if plugin_class:
+            handler = plugin_class(self)
+            try:
+                return handler.authenticate(auth_pkt)
+            except AttributeError:
+                if plugin_name != 'dialog':
+                    raise err.OperationalError(2059, "Authentication plugin '%s'" +
+                              " not loaded: - missing authenticate method" % plugin)
+        else:
+            handler = None
+        if plugin_name == "mysql_native_password":
+            # https://dev.mysql.com/doc/internals/en/secure-password-authentication.html#packet-Authentication::Native41
+            data = _scramble(self.password.encode('latin1'), auth_packet.read_all()) + b'\0'
+        elif plugin_name == "mysql_old_password":
+            # https://dev.mysql.com/doc/internals/en/old-password-authentication.html
+            data = _scramble_323(self.password.encode('latin1'), auth_packet.read_all()) + b'\0'
+        elif plugin_name == "mysql_clear_password":
+            # https://dev.mysql.com/doc/internals/en/clear-text-authentication.html
+            data = self.password.encode('latin1') + b'\0'
+        elif plugin_name == "dialog":
+            pkt = auth_packet
+            while True:
+                flag = pkt.read_uint8()
+                echo = (flag & 0x06) == 0x02
+                last = (flag & 0x01) == 0x01
+                prompt = pkt.read_all()
+
+                if prompt == "Password: ":
+                    self.write_packet(self.password.encode('latin1') + b'\0')
+                elif handler:
+                    resp = 'no response - TypeError within plugin.prompt method'
+                    try:
+                        resp = handler.prompt(echo, prompt)
+                        self.write_packet(resp + b'\0')
+                    except AttributeError:
+                        raise err.OperationalError(2059, "Authentication plugin '%s'" +
+                                  " not loaded: - missing prompt method" % plugin_name)
+                    except TypeError:
+                        raise err.OperationalError(2061, "Authentication plugin '%s'" \
+                                  " didn't respond with string. Returned '%r'" % (plugin_name, resp))
+                else:
+                    raise err.OperationalError(2059, "Authentication plugin '%s' not configured" % plugin_name)
+                pkt = self._read_packet()
+                pkt.check_error()
+                if pkt.is_ok_packet() or last:
+                    break
+            return pkt
+        else:
+            raise err.OperationalError(2059, "Authentication plugin '%s' not configured" % plugin_name)
+
+        self.write_packet(data)
+        pkt = self._read_packet()
+        pkt.check_error()
+        return pkt
 
     # _mysql support
     def thread_id(self):
@@ -1063,7 +1178,7 @@ class Connection(object):
         self.protocol_version = byte2int(data[i:i+1])
         i += 1
 
-        server_end = data.find(int2byte(0), i)
+        server_end = data.find(b'\0', i)
         self.server_version = data[i:server_end].decode('latin1')
         i = server_end + 1
 
@@ -1095,10 +1210,30 @@ class Connection(object):
         if len(data) >= i + salt_len:
             # salt_len includes auth_plugin_data_part_1 and filler
             self.salt += data[i:i+salt_len]
-        # TODO: AUTH PLUGIN NAME may appeare here.
+            i += salt_len
+
+        i+=1
+        # AUTH PLUGIN NAME may appear here.
+        if self.server_capabilities & CLIENT.PLUGIN_AUTH and len(data) >= i:
+            # Due to Bug#59453 the auth-plugin-name is missing the terminating
+            # NUL-char in versions prior to 5.5.10 and 5.6.2.
+            # ref: https://dev.mysql.com/doc/internals/en/connection-phase-packets.html#packet-Protocol::Handshake
+            # didn't use version checks as mariadb is corrected and reports
+            # earlier than those two.
+            server_end = data.find(b'\0', i)
+            if server_end < 0:
+                # not found \0 and last field so take it all
+                self.plugin_name = data[i:].decode('latin1')
+            else:
+                self.plugin_name = data[i:server_end].decode('latin1')
+        else:
+            self.plugin_name = ''
 
     def get_server_info(self):
         return self.server_version
+
+    def get_plugin_name(self):
+        return self.plugin_name
 
     Warning = err.Warning
     Error = err.Error
@@ -1306,10 +1441,11 @@ class LoadLocalFile(object):
                     format_str = '!{0}s'.format(len(chunk))
                     packet += struct.pack(format_str, chunk)
                     self.connection._write_bytes(packet)
-                    seq_id += 1
+                    seq_id = (seq_id + 1) % 256
         except IOError:
             raise err.OperationalError(1017, "Can't find file '{0}'".format(self.filename))
         finally:
             # send the empty packet to signify we are done sending data
             packet = struct.pack('<i', 0)[:3] + int2byte(seq_id)
             self.connection._write_bytes(packet)
+            self.next_packet = (seq_id + 1) % 256
