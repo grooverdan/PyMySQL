@@ -28,7 +28,7 @@ if [ ! -z "${DB}" ]; then
     sleep 5
     cat /tmp/mysql.err
     if [ ! -z "${PASSWD}" ]; then
-        mysql -S /tmp/mysql.sock -u root -p"${PASSWD}" -e "SET PASSWORD = PASSWORD('')"
+        ${P}/bin/mysql -S /tmp/mysql.sock -u root -p"${PASSWD}" -e "SET PASSWORD = PASSWORD('')"
     fi
     mysql -S /tmp/mysql.sock -u root "create user ${USER}@localhost identified by ''; create user ${USER}@'%' identified by ''; grant all on *.* to  ${USER}@localhost WITH GRANT OPTION;grant all on *.* to  ${USER}@'%' WITH GRANT OPTION;"
     sed -e 's/3306/3307/g' -e 's:/var/run/mysqld/mysqld.sock:/tmp/mysql.sock:g' .travis.databases.json > pymysql/tests/databases.json
