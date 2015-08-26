@@ -37,7 +37,9 @@ if [ ! -z "${DB}" ]; then
     fi
     mysql -S /tmp/mysql.sock -u root -e "create user ${USER}@localhost; create user ${USER}@'%'; grant all on *.* to  ${USER}@localhost WITH GRANT OPTION;grant all on *.* to  ${USER}@'%' WITH GRANT OPTION;"
     sed -e 's/3306/3307/g' -e 's:/var/run/mysqld/mysqld.sock:/tmp/mysql.sock:g' .travis.databases.json > pymysql/tests/databases.json
-    echo -e "[client]\nsocket = /tmp/mysql.sock\n" > "${HOME}"/.my.cnf 
+    echo -e "[client]\nsocket = /tmp/mysql.sock\n" > "${HOME}"/.my.cnf
+    # disable existing database server in case of accidential connection
+    mysql -e 'drop user travis@localhost; drop user root@localhost'
 else
     cp .travis.databases.json pymysql/tests/databases.json
 fi
