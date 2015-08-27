@@ -178,9 +178,15 @@ class TestAuthentication(base.PyMySQLTestCase):
         db = self.db.copy()
         db['password'] = "crummy p\tassword"
         with self.connections[0] as c:
-            c.execute("SELECT OLD_PASSWORD('%s')" % db['password'])
+            # deprecated in 5.7
+            if sys.version_info[0:2] >= (3,2) and self.mysql_server_is(conn, (5, 7, 0)):
+                with self.assertWarns(pymysql.err.Warning) as cm:
+                    c.execute("SELECT OLD_PASSWORD('%s')" % db['password'])
+            else:
+                c.execute("SELECT OLD_PASSWORD('%s')" % db['password'])
             v = c.fetchone()[0]
             self.assertEqual(v, '2a01785203b08770')
+            # only works in MariaDB and MySQL-5.6
             with TempUser(c, 'old_pass_user@localhost',
                           self.databases[0]['db'], 'mysql_old_password', '2a01785203b08770') as u:
                 cur = pymysql.connect(user='old_pass_user', **db).cursor()
