@@ -1,15 +1,8 @@
 import datetime
 import decimal
-<<<<<<< HEAD
 import time
 import sys
 import os
-import unittest2
-import pymysql
-=======
->>>>>>> master
-import time
-import sys
 import unittest2
 import pymysql
 from pymysql.tests import base
