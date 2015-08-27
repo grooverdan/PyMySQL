@@ -188,13 +188,15 @@ class TestAuthentication(base.PyMySQLTestCase):
             v = c.fetchone()[0]
             self.assertEqual(v, '2a01785203b08770')
             # only works in MariaDB and MySQL-5.6
-            with TempUser(c, 'old_pass_user@localhost',
-                          self.databases[0]['db'], 'mysql_old_password', '2a01785203b08770') as u:
-                cur = pymysql.connect(user='old_pass_user', **db).cursor()
-                cur.execute("SELECT VERSION()")
+            if self.mysql_server_is(self.connections[0], (5, 5, 0)):
+                with TempUser(c, 'old_pass_user@localhost',
+                              self.databases[0]['db'], 'mysql_old_password', '2a01785203b08770') as u:
+                    cur = pymysql.connect(user='old_pass_user', **db).cursor()
+                    cur.execute("SELECT VERSION()")
             c.execute("SELECT @@secure_auth")
             secure_auth_setting = c.fetchone()[0]
-            c.execute('set old_passwords=ON, global secure_auth=OFF')
+            c.execute('set old_passwords=ON')
+            c.execute('set global secure_auth=OFF')
             with TempUser(c, 'old_pass_user@localhost',
                           self.databases[0]['db'], password=db['password']) as u:
                 cur = pymysql.connect(user='old_pass_user', **db).cursor()
