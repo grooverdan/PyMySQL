@@ -169,16 +169,27 @@ class TestAuthentication(base.PyMySQLTestCase):
                return
             # else we had 'bad guess at password' work with pam. Well cool
 
+    # select old_password("crummy p\tassword");
+    #| old_password("crummy p\tassword") |
+    #| 2a01785203b08770                  |
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(mysql_old_password_found, "no mysql_old_password plugin")
     def testMySQLOldPasswordAuth(self):
         db = self.db.copy()
-        db['password'] = 'crummy password'
-        with TempUser(self.connections[0].cursor(), 'old_pass_user@localhost',
-                      self.databases[0]['db'], password='not used') as u:
-            self.connections[0].cursor().execute('set password for old_pass_user@localhost = OLD_PASSWORD(\'crummy password\')')
-            cur = pymysql.connect(user='old_pass_user', **db).cursor()
-            cur.execute("SELECT VERSION()")
+        db['password'] = "crummy p\tassword"
+        with self.connections[0] as c:
+            c.execute("SELECT OLD_PASSWORD('%s')" % db['password'])
+            v = c.fetchone()[0]
+            self.assertEqual(v, '2a01785203b08770')
+            with TempUser(c, 'old_pass_user@localhost',
+                          self.databases[0]['db'], 'mysql_old_password', '2a01785203b08770') as u:
+                cur = pymysql.connect(user='old_pass_user', **db).cursor()
+                cur.execute("SELECT VERSION()")
+            c.execute('set old_passwords=ON')
+            with TempUser(c, 'old_pass_user@localhost',
+                          self.databases[0]['db'], password=db['password']) as u:
+                cur = pymysql.connect(user='old_pass_user', **db).cursor()
+                cur.execute("SELECT VERSION()")
 
 class TestConnection(base.PyMySQLTestCase):
 
