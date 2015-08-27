@@ -88,9 +88,9 @@ class TestConnection(base.PyMySQLTestCase):
     def test_ssl(self):
         current_db = self.databases[0].copy()
         current_db['ssl'] = {
-            'key': keyfile,
-            'cert': certfile,
-            'ca': cafile,
+            'key': TestConnection.keyfile,
+            'cert': TestConnection.certfile,
+            'ca': TestConnection.cafile,
         }
         with self.assertWarns(DeprecationWarning) as cm:
             conn = pymysql.connect(**current_db)
