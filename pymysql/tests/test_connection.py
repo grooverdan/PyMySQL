@@ -179,8 +179,8 @@ class TestAuthentication(base.PyMySQLTestCase):
         db = self.db.copy()
         db['password'] = "crummy p\tassword"
         with self.connections[0] as c:
-            # deprecated in 5.7
-            if sys.version_info[0:2] >= (3,2) and self.mysql_server_is(self.connections[0], (5, 7, 0)):
+            # deprecated in 5.6
+            if sys.version_info[0:2] >= (3,2) and self.mysql_server_is(self.connections[0], (5, 6, 0)):
                 with self.assertWarns(pymysql.err.Warning) as cm:
                     c.execute("SELECT OLD_PASSWORD('%s')" % db['password'])
             else:
