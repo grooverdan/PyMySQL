@@ -7,7 +7,7 @@ set -v
 
 if [ ! -z "${DB}" ]; then
     # disable existing database server in case of accidential connection
-    mysql -u root -e 'drop user travis@localhost; drop user root@localhost; drop user travis; create user super@localhost; grant all on super@localhost'
+    mysql -u root -e 'drop user travis@localhost; drop user root@localhost; drop user travis; create user super@localhost; grant all on *.* to super@localhost with grant option'
     mysql -u super -e 'drop user root'
     F=mysql-${DB}-linux-glibc2.5-x86_64
     mkdir -p ${HOME}/mysql
@@ -33,7 +33,9 @@ if [ ! -z "${DB}" ]; then
         ${P}/bin/mysql_ssl_rsa_setup --datadir=${HOME}/db-"${DB}"
     fi
     ${P}/bin/mysqld_safe ${O} --ledir=/ --mysqld=${P}/bin/mysqld  --datadir=${HOME}/db-${DB} --socket=/tmp/mysql.sock --port 3307 --innodb-buffer-pool-size=200M  --lc-messages-dir=${P}/share --plugin-dir=${P}/lib/plugin/ --log-error=/tmp/mysql.err &
-    sleep 5
+    while [ ! -S /tmp/mysql.sock  ]; do
+       sleep 2
+    done
     cat /tmp/mysql.err
     if [ ! -z "${PASSWD}" ]; then
         ${P}/bin/mysql -S /tmp/mysql.sock -u root -p"${PASSWD}" --connect-expired-password -e "SET PASSWORD = PASSWORD('')"
