@@ -1,11 +1,17 @@
 import datetime
 import decimal
+<<<<<<< HEAD
 import time
 import sys
 import os
 import unittest2
 import pymysql
+=======
+>>>>>>> master
 import time
+import sys
+import unittest2
+import pymysql
 from pymysql.tests import base
 
 
@@ -94,6 +100,13 @@ class TestConnection(base.PyMySQLTestCase):
         }
         with self.assertWarns(DeprecationWarning) as cm:
             conn = pymysql.connect(**current_db)
+    @unittest2.skipUnless(sys.version_info[0:2] >= (3,2), "required py-3.2")
+    def test_no_delay_warning(self):
+        current_db = self.databases[0].copy()
+        current_db['no_delay'] =  True
+        with self.assertWarns(DeprecationWarning) as cm:
+            conn = pymysql.connect(**current_db)
+
 
 # A custom type and function to escape it
 class Foo(object):
