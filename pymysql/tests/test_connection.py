@@ -7,14 +7,17 @@ from pymysql.tests import base
 
 
 class TempUser:
-    def __init__(self, c, user, db, auth, authdata=None):
+    def __init__(self, c, user, db, auth=None, authdata=None, password=None):
         self._c = c
         self._user = user
         self._db = db
-        create = "CREATE USER %s" \
-                 " IDENTIFIED WITH %s" % (user, auth)
-        if authdata is not None:
-            create += " AS '%s'" % authdata
+        create = "CREATE USER " + user
+        if password is not None:
+            create += " IDENTIFIED BY '%s'" % password
+        elif auth is not None:
+            create += " IDENTIFIED WITH %s" % auth
+            if authdata is not None:
+                create += " AS '%s'" % authdata
         try:
             c.execute(create)
             self._created = True
@@ -166,20 +169,15 @@ class TestAuthentication(base.PyMySQLTestCase):
                return
             # else we had 'bad guess at password' work with pam. Well cool
 
-    # set old_passwords=1; select old_password('crummy password'), @@old_passwords;
-    # +---------------------------------+-----------------+
-    # | old_password('crummy password') | @@old_passwords |
-    # +---------------------------------+-----------------+
-    # | 2a01785203b08770                |               1 |
-    # +---------------------------------+-----------------+
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(mysql_old_password_found, "no mysql_old_password plugin")
     def testMySQLOldPasswordAuth(self):
         db = self.db.copy()
         db['password'] = 'crummy password'
-        with TempUser(self.connections[0].cursor(), 'mysql_old_pass_user@localhost',
-                      self.databases[0]['db'], 'mysql_old_password', '2a01785203b08770') as u:
-            cur = pymysql.connect(user='mysql_old_pass_user', **db).cursor()
+        with TempUser(self.connections[0].cursor(), 'old_pass_user@localhost',
+                      self.databases[0]['db'], password='not used') as u:
+            self.connections[0].cursor().execute('set password for old_pass_user@localhost = OLD_PASSWORD(\'crummy password\')')
+            cur = pymysql.connect(user='old_pass_user', **db).cursor()
             cur.execute("SELECT VERSION()")
 
 class TestConnection(base.PyMySQLTestCase):
