@@ -176,6 +176,8 @@ class TestAuthentication(base.PyMySQLTestCase):
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(mysql_old_password_found, "no mysql_old_password plugin")
     def testMySQLOldPasswordAuth(self):
+        if self.mysql_server_is(self.connections[0], (5, 7, 0)):
+            raise unittest2.SkipTest('Old passwords aren]\'t supported in 5.7')
         db = self.db.copy()
         db['password'] = "crummy p\tassword"
         with self.connections[0] as c:
@@ -187,17 +189,21 @@ class TestAuthentication(base.PyMySQLTestCase):
                 c.execute("SELECT OLD_PASSWORD('%s')" % db['password'])
             v = c.fetchone()[0]
             self.assertEqual(v, '2a01785203b08770')
-            # only works in MariaDB and MySQL-5.6
-            # can't get the version to separate these right
-            #   with TempUser(c, 'old_pass_user@localhost',
-            #                 self.databases[0]['db'], 'mysql_old_password', '2a01785203b08770') as u:
-            #       cur = pymysql.connect(user='old_pass_user', **db).cursor()
-            #       cur.execute("SELECT VERSION()")
+            # only works in MariaDB and MySQL-5.6 - can't separate out by version
+            #if self.mysql_server_is(self.connections[0], (5, 5, 0)):
+            #    with TempUser(c, 'old_pass_user@localhost',
+            #                  self.databases[0]['db'], 'mysql_old_password', '2a01785203b08770') as u:
+            #        cur = pymysql.connect(user='old_pass_user', **db).cursor()
+            #        cur.execute("SELECT VERSION()")
+            c.execute("SELECT @@secure_auth")
+            secure_auth_setting = c.fetchone()[0]
             c.execute('set old_passwords=ON')
+            c.execute('set global secure_auth=OFF')
             with TempUser(c, 'old_pass_user@localhost',
                           self.databases[0]['db'], password=db['password']) as u:
                 cur = pymysql.connect(user='old_pass_user', **db).cursor()
                 cur.execute("SELECT VERSION()")
+            c.execute('set global secure_auth=%r' % secure_auth_setting)
 
 class TestConnection(base.PyMySQLTestCase):
 
