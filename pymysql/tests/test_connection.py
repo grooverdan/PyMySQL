@@ -177,7 +177,11 @@ class TestAuthentication(base.PyMySQLTestCase):
     @unittest2.skipUnless(mysql_old_password_found, "no mysql_old_password plugin")
     def testMySQLOldPasswordAuth(self):
         if self.mysql_server_is(self.connections[0], (5, 7, 0)):
-            raise unittest2.SkipTest('Old passwords aren]\'t supported in 5.7')
+            raise unittest2.SkipTest('Old passwords aren\'t supported in 5.7')
+        # pymysql.err.OperationalError: (1045, "Access denied for user 'old_pass_user'@'localhost' (using password: YES)")
+        # from login in MySQL-5.6
+        if self.mysql_server_is(self.connections[0], (5, 6, 0)):
+            raise unittest2.SkipTest('Old passwords don\'t authenticate in 5.6')
         db = self.db.copy()
         db['password'] = "crummy p\tassword"
         with self.connections[0] as c:
