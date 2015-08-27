@@ -1,5 +1,9 @@
 import datetime
 import decimal
+import time
+import sys
+import os
+import unittest2
 import pymysql
 import time
 from pymysql.tests import base
@@ -74,6 +78,22 @@ class TestConnection(base.PyMySQLTestCase):
         self.assertEqual(('foobar',), c.fetchone())
         conn.close()
 
+    keyfile = os.path.join(os.path.dirname(__file__), "client-key.pem")
+    certfile = os.path.join(os.path.dirname(__file__), "client-cert.pem")
+    cafile = os.path.join(os.path.dirname(__file__), "ca.pem")
+
+    @unittest2.skipUnless(os.path.exists(keyfile), "ssl key file needed`")
+    @unittest2.skipUnless(os.path.exists(certfile), "ssl cert file needed`")
+    @unittest2.skipUnless(os.path.exists(cafile), "ssl ca file needed`")
+    def test_ssl(self):
+        current_db = self.databases[0].copy()
+        current_db['ssl'] = {
+            'key': keyfile,
+            'cert': certfile,
+            'ca': cafile,
+        }
+        with self.assertWarns(DeprecationWarning) as cm:
+            conn = pymysql.connect(**current_db)
 
 # A custom type and function to escape it
 class Foo(object):

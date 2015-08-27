@@ -31,6 +31,7 @@ if [ ! -z "${DB}" ]; then
     PASSWD=${PWLINE##* }
     if [ -x ${P}/bin/mysql_ssl_rsa_setup ]; then
         ${P}/bin/mysql_ssl_rsa_setup --datadir=${HOME}/db-"${DB}"
+        cp ${HOME}/db-"${DB}"/{client-key,client-cert,ca}.pem pymysql/tests
     fi
     ${P}/bin/mysqld_safe ${O} --ledir=/ --mysqld=${P}/bin/mysqld  --datadir=${HOME}/db-${DB} --socket=/tmp/mysql.sock --port 3307 --innodb-buffer-pool-size=200M  --lc-messages-dir=${P}/share --plugin-dir=${P}/lib/plugin/ --log-error=/tmp/mysql.err &
     while [ ! -S /tmp/mysql.sock  ]; do
