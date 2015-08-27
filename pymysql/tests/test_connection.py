@@ -86,7 +86,7 @@ class TestConnection(base.PyMySQLTestCase):
     @unittest2.skipUnless(os.path.exists(certfile), "ssl cert file needed`")
     @unittest2.skipUnless(os.path.exists(cafile), "ssl ca file needed`")
     def test_ssl(self):
-        current_db = self.databases[0].copy()
+        current_db = self.databases[1].copy()
         current_db['ssl'] = {
             'key': TestConnection.keyfile,
             'cert': TestConnection.certfile,
