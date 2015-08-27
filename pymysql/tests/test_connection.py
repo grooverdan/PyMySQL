@@ -198,7 +198,12 @@ class TestAuthentication(base.PyMySQLTestCase):
             c.execute("SELECT @@secure_auth")
             secure_auth_setting = c.fetchone()[0]
             c.execute('set old_passwords=1')
-            c.execute('set global secure_auth=0')
+            # pymysql.err.Warning: 'pre-4.1 password hash' is deprecated and will be removed in a future release. Please use post-4.1 password hash instead
+            if sys.version_info[0:2] >= (3,2) and self.mysql_server_is(self.connections[0], (5, 6, 0)):
+                with self.assertWarns(pymysql.err.Warning) as cm:
+                    c.execute('set global secure_auth=0')
+            else:
+                c.execute('set global secure_auth=0')
             with TempUser(c, 'old_pass_user@localhost',
                           self.databases[0]['db'], password=db['password']) as u:
                 cur = pymysql.connect(user='old_pass_user', **db).cursor()
