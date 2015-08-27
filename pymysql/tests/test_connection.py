@@ -197,8 +197,8 @@ class TestAuthentication(base.PyMySQLTestCase):
             #        cur.execute("SELECT VERSION()")
             c.execute("SELECT @@secure_auth")
             secure_auth_setting = c.fetchone()[0]
-            c.execute('set old_passwords=ON')
-            c.execute('set global secure_auth=OFF')
+            c.execute('set old_passwords=1')
+            c.execute('set global secure_auth=0')
             with TempUser(c, 'old_pass_user@localhost',
                           self.databases[0]['db'], password=db['password']) as u:
                 cur = pymysql.connect(user='old_pass_user', **db).cursor()
