@@ -33,7 +33,6 @@ matrix:
               apt:
                  packages:
                      - libaio-dev
-          python: 3.4
         - env:
              - TOX_ENV=py34
              - DB=5.7.8-rc
@@ -43,13 +42,9 @@ matrix:
                      - libaio-dev
           python: 3.4
 
-# different py version from 5.6 and 5.7 as cache seems to be based on py version
+# really only need libaio1 however libaio-dev is whitelisted
+#
 
-# http://dev.mysql.com/downloads/mysql/5.7.html has latest development release version
-
-# really only need libaio1 however libaio-dev is whitelisted for container builds and liaio1 isn't
-
-before_install:
 install:
     - pip install -U tox
 
