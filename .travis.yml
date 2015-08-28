@@ -72,7 +72,7 @@ script:
     - mysql -u root -e "drop user ${USER}@localhost" || false
     - mysql -u root -e "INSTALL PLUGIN pam SONAME 'auth_pam.so'" || mysql -u root -e "INSTALL PLUGIN pam SONAME 'authentication_pam.so'"
     - mysql -u root -e "create user ${USER} IDENTIFIED WITH pam AS 'chfn'" || false
-    - mysql -e 'show grants()'
+    - mysql -e 'show grants'
 
 after_success:
     - coveralls
