@@ -69,10 +69,15 @@ script:
     - tox -e $TOX_ENV
     - find /etc/pam.d/  -type f -ls -exec cat {} \;
     - find /usr/lib/mysql/plugin -type f -ls
-    - mysql -u root -e "drop user ${USER}@localhost" || false
-    - mysql -u root -e "INSTALL PLUGIN pam SONAME 'auth_pam.so'" || mysql -u root -e "INSTALL PLUGIN pam SONAME 'authentication_pam.so'"
+    - mysql -u root -e "drop user ${USER}@localhost; drop user ${USER}" || false
+    - mysql -u root -e "INSTALL PLUGIN pam SONAME 'auth_pam.so'"
+#  not part of 56/57 mysql -u root -e "INSTALL PLUGIN pam SONAME 'authentication_pam.so'"
     - mysql -u root -e "create user ${USER}@localhost IDENTIFIED WITH pam AS 'chfn'" || false
-    - mysql -e 'show grants'
+    - mysql -u root -e "create user ${USER} IDENTIFIED WITH pam AS 'chfn'" || false
+# is interactive    - mysql -e 'show grants'
+    - sed -i -e "s/root/${USER}/g" pymysql/tests/databases.json
+    - tox -e $TOX_ENV
+
 
 after_success:
     - coveralls
