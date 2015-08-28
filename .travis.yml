@@ -68,7 +68,7 @@ before_script:
 script:
     - tox -e $TOX_ENV
     - find /etc/pam.d/  -type f -ls -exec cat {} \;
-    - find /usr/lib64/mysql/plugin -type -f -ls
+    - find /usr/lib64/mysql/plugin -type f -ls
 
 after_success:
     - coveralls
