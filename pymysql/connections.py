@@ -1140,13 +1140,13 @@ class Connection(object):
                         resp = handler.prompt(echo, prompt)
                         self.write_packet(resp + b'\0')
                     except AttributeError:
-                        raise err.OperationalError(2059, "Authentication plugin '%s'" +
-                                  " not loaded: - missing prompt method" % plugin_name)
+                        raise err.OperationalError(2059, "Authentication plugin '%s'" \
+                                  " not loaded: - %r missing prompt method" % (plugin_name, handler))
                     except TypeError:
                         raise err.OperationalError(2061, "Authentication plugin '%s'" \
-                                  " didn't respond with string. Returned '%r' to prompt %r" % (plugin_name, resp, prompt))
+                                  " %r didn't respond with string. Returned '%r' to prompt %r" % (plugin_name, handler, resp, prompt))
                 else:
-                    raise err.OperationalError(2059, "Authentication plugin '%s' not configured" % plugin_name)
+                    raise err.OperationalError(2059, "Authentication plugin '%s' (%r) not configured" % (plugin_name, handler))
                 pkt = self._read_packet()
                 pkt.check_error()
                 if pkt.is_ok_packet() or last:
