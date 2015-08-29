@@ -310,8 +310,8 @@ class TestAuthentication(base.PyMySQLTestCase):
             cur.execute("install plugin mysql_clear_password soname 'mysql_clear_password.so'")
             TestAuthentication.clear_password_found = True
             self.realTestDialogClear()
-        except pymysql.err.InternalError:
-            raise unittest2.SkipTest('we couldn\'t install the mysql_clear_password plugin')
+        #except pymysql.err.InternalError:
+        #    raise unittest2.SkipTest('we couldn\'t install the mysql_clear_password plugin')
         finally:
             if TestAuthentication.clear_password_found:
                 cur = self.connections[0].cursor()
@@ -331,27 +331,8 @@ class TestAuthentication(base.PyMySQLTestCase):
             pymysql.connect(user='pymysql_clear', **db)
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
-    @unittest2.skipIf(sha256_password_found, "sha256 password plugin already installed")
-    def testDialogAuthSHA256InstallPlugin(self):
-        # needs plugin. lets install it.
-        cur = self.connections[0].cursor()
-        try:
-            cur.execute("install plugin sha256_password soname 'sha256_password.so'")
-            TestAuthentication.sha256_password_found = True
-            self.realTestDialogAuthSHA256()
-        except pymysql.err.InternalError:
-            raise unittest2.SkipTest('we couldn\'t install the sha256 plugin')
-        finally:
-            if TestAuthentication.sha256_password_found:
-                cur = self.connections[0].cursor()
-                cur.execute("uninstall plugin sha256")
-
-    @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(sha256_password_found, "no sha256 password found")
     def testDialogAuthSHA256(self):
-        self.realTestDialogSHA256()
-
-    def realTestDialogAuthSHA256(self):
         c = self.connections[0].cursor()
         with TempUser(c, 'pymysql_sha256@localhost',
                       self.databases[0]['db'], 'sha256_password') as u:
