@@ -62,6 +62,8 @@ before_script:
           if [ ! -d "${P}" ]; then
               wget http://cdn.mysql.com/Downloads/MySQL-${DB%.*}/${F}.tar.gz -O - | tar -zxf - --directory=${HOME}/mysql ;
           fi;
+          openssl genrsa -out "${P}"/private_key.pem 2048;
+          openssl rsa -in "${P}"/private_key.pem -pubout -out "${P}"/public_key.pem;
           ${P}/scripts/mysql_install_db  --defaults-file=${P}/my.cnf --basedir=${P} --datadir=${HOME}/db-"${DB}" --log-error=/tmp/mysql.err;
           ${P}/bin/mysqld_safe --defaults-file=${P}/my.cnf --ledir=/ --mysqld=${P}/bin/mysqld  --datadir=${HOME}/db-${DB} --socket=/tmp/mysql.sock --port 3307 --innodb-buffer-pool-size=200M  --lc-messages-dir=${P}/share --plugin-dir=${P}/lib/plugin/ --log-error=/tmp/mysql.err &
           sleep 5; cat /tmp/mysql.err; df -h;
@@ -76,6 +78,7 @@ before_script:
     - "mysql -e 'create database test_pymysql2 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;'"
     - "mysql -e 'select VERSION();'"
     - mysql -e "show plugins; show global variables like 'sha%';show global status like 'rsa%';"
+    - find /usr/lib/mysql -ls
     - export COVERALLS_PARALLEL=true
 
 script:
