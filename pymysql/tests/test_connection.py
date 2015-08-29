@@ -311,7 +311,7 @@ class TestAuthentication(base.PyMySQLTestCase):
         # needs plugin. lets install it.
         cur = self.connections[0].cursor()
         try:
-            cur.execute("install plugin cleartext_plugin_server soname 'auth_test_plugin.so'")
+            cur.execute("install plugin qa_auth_server soname 'qa_auth_server.so'")
             TestAuthentication.clear_password_found = True
             self.realTestAuthClear()
         #except pymysql.err.InternalError:
@@ -319,7 +319,7 @@ class TestAuthentication(base.PyMySQLTestCase):
         finally:
             if TestAuthentication.clear_password_found:
                 cur = self.connections[0].cursor()
-                cur.execute("uninstall plugin mysql_clear_password")
+                cur.execute("uninstall plugin qa_auth_server")
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(clear_password_found, "no mysql_clear_password plugin found")
@@ -329,7 +329,7 @@ class TestAuthentication(base.PyMySQLTestCase):
     def realTestAuthClear(self):
         c = self.connections[0].cursor()
         with TempUser(c, 'pymysql_clear@localhost',
-                      self.databases[0]['db'], 'cleartext_plugin_server', 'not secure') as u:
+                      self.databases[0]['db'], 'qa_auth_server', 'not secure') as u:
             db = self.db.copy()
             db['password'] = "not secure"
             pymysql.connect(user='pymysql_clear', **db)
