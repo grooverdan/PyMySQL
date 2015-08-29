@@ -1108,10 +1108,10 @@ class Connection(object):
                 return handler.authenticate(auth_packet)
             except AttributeError:
                 if plugin_name != b'dialog':
-                    raise err.OperationalError(2059, "Authentication plugin '%s'" +
+                    raise err.OperationalError(2059, "Authentication plugin '%s'" \
                               " not loaded: - %r missing authenticate method" % (plugin_name, plugin_class))
             except TypeError:
-                raise err.OperationalError(2059, "Authentication plugin '%s'" +
+                raise err.OperationalError(2059, "Authentication plugin '%s'" \
                     " not loaded: - %r cannot be constructed with connection object" % (plugin_name, plugin_class))
         else:
             handler = None
