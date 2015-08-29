@@ -146,8 +146,8 @@ class TestAuthentication(base.PyMySQLTestCase):
             cur.execute("install plugin two_questions soname 'dialog_examples.so'")
             TestAuthentication.two_questions_found = True
             self.realTestDialogAuthTwoQuestions()
-        except pymysql.err.InternalError:
-            raise unittest2.SkipTest('we couldn\'t install the two_questions plugin')
+        #except pymysql.err.InternalError:
+        #    raise unittest2.SkipTest('we couldn\'t install the two_questions plugin')
         finally:
             if TestAuthentication.two_questions_found:
                 cur = self.connections[0].cursor()
@@ -175,8 +175,8 @@ class TestAuthentication(base.PyMySQLTestCase):
             cur.execute("install plugin three_attempts soname 'dialog_examples.so'")
             TestAuthentication.three_attempts_found = True
             self.realTestDialogAuthThreeAttempts()
-        except pymysql.err.InternalError:
-            raise unittest2.SkipTest('we couldn\'t install the three_attempts plugin')
+        #except pymysql.err.InternalError:
+        #    raise unittest2.SkipTest('we couldn\'t install the three_attempts plugin')
         finally:
             if TestAuthentication.three_attempts_found:
                 cur = self.connections[0].cursor()
