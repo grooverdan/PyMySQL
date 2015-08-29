@@ -150,7 +150,7 @@ class TestAuthentication(base.PyMySQLTestCase):
                 prompt = pkt.read_all()
 
                 if prompt == b'Password, please:':
-                    self.con.write_packet(b'notverysecret\0')
+                    self.con.write_packet(b'stillnotverysecret\0')
                 else:
                     self.con.write_packet(b'no idea what to do with this prompt\0')
                 pkt = self.con._read_packet()
