@@ -1103,8 +1103,8 @@ class Connection(object):
     def _process_auth(self, plugin_name, auth_packet):
         plugin_class = self.plugin_map.get(plugin_name)
         if plugin_class:
-            handler = plugin_class(self)
             try:
+                handler = plugin_class(self)
                 return handler.authenticate(auth_packet)
             except AttributeError:
                 if plugin_name != b'dialog':
