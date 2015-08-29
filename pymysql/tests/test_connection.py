@@ -264,7 +264,7 @@ class TestAuthentication(base.PyMySQLTestCase):
 
     def realTestPamAuth(self):
         db = self.db.copy()
-        db['password'] = b'travis'
+        db['password'] = 'travis'
         with TempUser(self.connections[0].cursor(), TestAuthentication.osuser + '@localhost',
                       self.databases[0]['db'], 'pam', 'chfn') as u:
             try:
