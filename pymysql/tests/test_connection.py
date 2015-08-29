@@ -49,6 +49,7 @@ class TestAuthentication(base.PyMySQLTestCase):
     pam_found = False
     mysql_old_password_found = False
     sha256_password_found = False
+    clear_password_found = False
 
     import os
     osuser = os.environ.get('USER')
@@ -90,8 +91,10 @@ class TestAuthentication(base.PyMySQLTestCase):
             mysql_old_password_found = True
         elif r[0] ==  u'sha256_password':
             sha256_password_found = True
-        #else:
-        #    print("plugin: %r" % r[0])
+        elif r[0] ==  u'mysql_clear_password':
+            clear_password_found = True
+        else:
+            print("plugin: %r" % r[0])
 
     def test_plugin(self):
         # Bit of an assumption that the current user is a native password
@@ -301,6 +304,37 @@ class TestAuthentication(base.PyMySQLTestCase):
                 cur = pymysql.connect(user='old_pass_user', **db).cursor()
                 cur.execute("SELECT VERSION()")
             c.execute('set global secure_auth=%r' % secure_auth_setting)
+
+    @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
+    @unittest2.skipIf(clear_password_found, "mysql_clear_password plugin already installed")
+    def testAuthClearInstallPlugin(self):
+        # needs plugin. lets install it.
+        cur = self.connections[0].cursor()
+        try:
+            cur.execute("install plugin qa_auth_server soname 'qa_auth_server.so'")
+            TestAuthentication.clear_password_found = True
+            self.realTestAuthClear()
+        except pymysql.err.InternalError:
+            raise unittest2.SkipTest('we couldn\'t install the qa_auth_server plugin')
+        finally:
+            if TestAuthentication.clear_password_found:
+                cur = self.connections[0].cursor()
+                cur.execute("uninstall plugin qa_auth_server")
+
+    @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
+    @unittest2.skipUnless(clear_password_found, "no mysql_clear_password plugin found")
+    def testAuthClear(self):
+        self.realTestClear()
+
+    def realTestAuthClear(self):
+        c = self.connections[0].cursor()
+        with TempUser(c, 'pymysql_clear@localhost',
+                      self.databases[0]['db'], 'qa_auth_server', 'not secure') as u:
+            db = self.db.copy()
+            db['password'] = "not secure"
+            # not implemented - requests qa_auth_interface plugin
+            with self.assertRaises(pymysql.err.OperationalError):
+                pymysql.connect(user='pymysql_clear', **db)
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(sha256_password_found, "no sha256 password authentication plugin found")
