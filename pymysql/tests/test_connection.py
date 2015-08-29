@@ -87,10 +87,12 @@ class TestAuthentication(base.PyMySQLTestCase):
             # Names differ but functionality is close
         elif (r[0], r[1], r[2]) ==  (u'mysql_old_password', u'ACTIVE', u'AUTHENTICATION'):
             mysql_old_password_found = True
-        elif (r[0], r[1], r[2]) ==  (b'sha256_password', u'ACTIVE', u'AUTHENTICATION'):
+        elif (r[0], r[1], r[2]) ==  (u'sha256_password', u'ACTIVE', u'AUTHENTICATION'):
             sha256_password_found = True
         elif (r[0], r[1], r[2]) ==  (u'mysql_clear_password', u'ACTIVE', u'AUTHENTICATION'):
             clear_password_found = True
+        else:
+            print('plugin: %r' % r)
 
     def test_plugin(self):
         # Bit of an assumption that the current user is a native password
