@@ -303,13 +303,13 @@ class TestAuthentication(base.PyMySQLTestCase):
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipIf(clear_password_found, "mysql_clear_password plugin already installed")
-    def testDialogAuthClearInstallPlugin(self):
+    def testAuthClearInstallPlugin(self):
         # needs plugin. lets install it.
         cur = self.connections[0].cursor()
         try:
-            cur.execute("install plugin mysql_clear_password soname 'mysql_clear_password.so'")
+            cur.execute("install plugin cleartext_plugin_server soname 'auth_test_plugin.so'")
             TestAuthentication.clear_password_found = True
-            self.realTestDialogClear()
+            self.realTestAuthClear()
         #except pymysql.err.InternalError:
         #    raise unittest2.SkipTest('we couldn\'t install the mysql_clear_password plugin')
         finally:
@@ -319,20 +319,20 @@ class TestAuthentication(base.PyMySQLTestCase):
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(clear_password_found, "no mysql_clear_password plugin found")
-    def testDialogAuthClear(self):
-        self.realTestDialogClear()
+    def testAuthClear(self):
+        self.realTestClear()
 
-    def realTestDialogAuthClear(self):
+    def realTestAuthClear(self):
         c = self.connections[0].cursor()
         with TempUser(c, 'pymysql_clear@localhost',
-                      self.databases[0]['db'], 'mysql_clear_password', 'not secure') as u:
+                      self.databases[0]['db'], 'cleartext_plugin_server', 'not secure') as u:
             db = self.db.copy()
             db['password'] = "not secure"
             pymysql.connect(user='pymysql_clear', **db)
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(sha256_password_found, "no sha256 password authentication plugin found")
-    def testDialogAuthSHA256(self):
+    def testAuthSHA256(self):
         c = self.connections[0].cursor()
         with TempUser(c, 'pymysql_sha256@localhost',
                       self.databases[0]['db'], 'sha256_password') as u:
