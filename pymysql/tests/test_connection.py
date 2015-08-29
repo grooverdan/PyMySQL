@@ -116,7 +116,7 @@ class TestConnection(base.PyMySQLTestCase):
                 sock.connect(d['unix_socket'])
             except KeyError:
                 sock = socket.create_connection(
-                                (d.get('host', 'localhost', d.get('port', 3306))))
+                                (d.get('host', 'localhost'), d.get('port', 3306)))
             for k in ['unix_socket', 'host', 'port']:
                 try:
                     del d[k]
