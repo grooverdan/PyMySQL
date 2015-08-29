@@ -164,6 +164,8 @@ class TestAuthentication(base.PyMySQLTestCase):
                                        b'Are you sure ?': b'yes, of course'}
         with TempUser(self.connections[0].cursor(), 'pymysql_2q@localhost',
                       self.databases[0]['db'], 'two_questions', 'notverysecret') as u:
+            with self.assertRaises(pymysql.err.OperationalError):
+                pymysql.connect(user='pymysql_2q', **self.db)
             pymysql.connect(user='pymysql_2q', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
@@ -193,6 +195,9 @@ class TestAuthentication(base.PyMySQLTestCase):
         with TempUser(self.connections[0].cursor(), 'pymysql_3a@localhost',
                       self.databases[0]['db'], 'three_attempts', 'stillnotverysecret') as u:
             pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
+            TestAuthentication.Dialog.m = {b'Password, please:': b'I do not know'}
+            with self.assertRaises(pymysql.err.OperationalError):
+                pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(pam_found, "no pam plugin")
