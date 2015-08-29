@@ -44,6 +44,8 @@ install:
           sudo apt-get install ${EXTRAPKG};
       fi
     - pip install -U tox coveralls
+    - export PAMSERVICE=chfn
+    - export PASSWORD=travis
 
 before_script:
     - if [ ! -z "${DB}" ]; then

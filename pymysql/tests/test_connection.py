@@ -243,6 +243,8 @@ class TestAuthentication(base.PyMySQLTestCase):
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipIf(pam_found, "pam plugin already installed")
+    @unittest2.skipUnless(os.environ.get('PASSWORD'), "PASSWORD env var required")
+    @unittest2.skipUnless(os.environ.get('PAMSERVICE'), "PAMSERVICE env var required")
     def testPamAuthInstallPlugin(self):
         # needs plugin. lets install it.
         cur = self.connections[0].cursor()
@@ -259,14 +261,17 @@ class TestAuthentication(base.PyMySQLTestCase):
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(pam_found, "no pam plugin")
+    @unittest2.skipUnless(os.environ.get('PASSWORD'), "PASSWORD env var required")
+    @unittest2.skipUnless(os.environ.get('PAMSERVICE'), "PAMSERVICE env var required")
     def testPamAuth(self):
         self.realTestPamAuth()
 
     def realTestPamAuth(self):
         db = self.db.copy()
-        db['password'] = 'travis'
+        db['password'] = os.environ.get('PASSWORD')
+
         with TempUser(self.connections[0].cursor(), TestAuthentication.osuser + '@localhost',
-                      self.databases[0]['db'], 'pam', 'chfn') as u:
+                      self.databases[0]['db'], 'pam', os.environ.get('PAMSERVICE')) as u:
             try:
                c = pymysql.connect(user=TestAuthentication.osuser, **db)
             except pymysql.OperationalError as e:
