@@ -73,7 +73,7 @@ class TestConnection(base.PyMySQLTestCase):
         c.execute('select "foobar";')
         self.assertEqual(('foobar',), c.fetchone())
         conn.close()
-        with self.assertRaises(pymysql.err):
+        with self.assertRaises(pymysql.err.Error):
             conn.ping(reconnect=False)
 
     def test_read_default_group(self):
