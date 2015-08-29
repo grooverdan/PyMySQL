@@ -341,7 +341,7 @@ class TestAuthentication(base.PyMySQLTestCase):
         with TempUser(c, 'pymysql_sha256@localhost',
                       self.databases[0]['db'], 'sha256_password') as u:
             c.execute('SET old_passwords = 2')
-            c.execute("SET PASSWORD FOR 'pymysql_sha256user'@'localhost' = PASSWORD('Sh@256Pa33')")
+            c.execute("SET PASSWORD FOR 'pymysql_sha256'@'localhost' = PASSWORD('Sh@256Pa33')")
             db = self.db.copy()
             db['password'] = "Sh@256Pa33"
             with self.assertRaises(pymysql.err.OperationalError):
