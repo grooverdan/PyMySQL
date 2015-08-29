@@ -85,17 +85,19 @@ class TestConnection(base.PyMySQLTestCase):
 
     def test_context(self):
         with self.assertRaises(ValueError):
-            with pymysql.connect(**self.databases[0]) as cur:
+            c = pymysql.connect(**self.databases[0])
+            with c as cur:
                 cur.execute('create table test ( a int )')
-                cur.begin()
+                c.begin()
                 cur.execute('insert into test values ((1))')
                 raise ValueError('pseudo abort')
-                cur.commit()
-        with pymysql.connect(**self.databases[0]) as cur:
+                c.commit()
+        c = pymysql.connect(**self.databases[0])
+        with c as cur:
             cur.execute('select count(*) from test')
-            self.assertEqual(0,cur.fetchone()[0])
+            self.assertEqual(0, cur.fetchone()[0])
             cur.execute('insert into test values ((1))')
-        with pymysql.connect(**self.databases[0]) as cur:
+        with c as cur:
             cur.execute('select count(*) from test')
             self.assertEqual(1,cur.fetchone()[0])
             cur.execute('drop table test')
