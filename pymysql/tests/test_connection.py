@@ -221,8 +221,13 @@ class TestAuthentication(base.PyMySQLTestCase):
             pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
             pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': TestAuthentication.DialogHandler}, **self.db)
             with self.assertRaises(pymysql.err.OperationalError):
+                pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': object}, **self.db)
+            with self.assertRaises(pymysql.err.OperationalError):
                 pymysql.connect(user='pymysql_3a', plugin_map={b'notdialogplugin': TestAuthentication.Dialog}, **self.db)
             TestAuthentication.Dialog.m = {b'Password, please:': b'I do not know'}
+            with self.assertRaises(pymysql.err.OperationalError):
+                pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
+            TestAuthentication.Dialog.m = {b'Password, please:': None}
             with self.assertRaises(pymysql.err.OperationalError):
                 pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
 
