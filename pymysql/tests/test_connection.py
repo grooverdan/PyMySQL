@@ -76,6 +76,59 @@ class TestConnection(base.PyMySQLTestCase):
         c.execute('select "foobar";')
         self.assertEqual(('foobar',), c.fetchone())
         conn.close()
+        with self.assertRaises(pymysql.err.Error):
+            conn.ping(reconnect=False)
+
+    def test_read_default_group(self):
+        conn = pymysql.connect(
+            read_default_group='client',
+            **self.databases[0]
+        )
+        self.assertTrue(conn.open)
+
+    def test_context(self):
+        with self.assertRaises(ValueError):
+            c = pymysql.connect(**self.databases[0])
+            with c as cur:
+                cur.execute('create table test ( a int )')
+                c.begin()
+                cur.execute('insert into test values ((1))')
+                raise ValueError('pseudo abort')
+                c.commit()
+        c = pymysql.connect(**self.databases[0])
+        with c as cur:
+            cur.execute('select count(*) from test')
+            self.assertEqual(0, cur.fetchone()[0])
+            cur.execute('insert into test values ((1))')
+        with c as cur:
+            cur.execute('select count(*) from test')
+            self.assertEqual(1,cur.fetchone()[0])
+            cur.execute('drop table test')
+
+    def test_set_charset(self):
+        c = pymysql.connect(**self.databases[0])
+        c.set_charset('utf8')
+        # TODO validate setting here
+
+    def test_defer_connect(self):
+        import socket
+        for db in self.databases:
+            d = db.copy()
+            try:
+                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                sock.connect(d['unix_socket'])
+            except KeyError:
+                sock = socket.create_connection(
+                                (d.get('host', 'localhost'), d.get('port', 3306)))
+            for k in ['unix_socket', 'host', 'port']:
+                try:
+                    del d[k]
+                except KeyError:
+                    pass
+
+            c = pymysql.connect(defer_connect=True, **d)
+            self.assertFalse(c.open)
+            c.connect(sock)
 
     keyfile = os.path.join(os.path.dirname(__file__), "client-key.pem")
     certfile = os.path.join(os.path.dirname(__file__), "client-cert.pem")
