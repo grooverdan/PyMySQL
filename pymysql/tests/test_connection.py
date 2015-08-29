@@ -266,7 +266,7 @@ class TestAuthentication(base.PyMySQLTestCase):
         db = self.db.copy()
         db['password'] = b'travis'
         with TempUser(self.connections[0].cursor(), TestAuthentication.osuser + '@localhost',
-                      self.databases[0]['db'], self.pam_plugin_name, 'chfn') as u:
+                      self.databases[0]['db'], TestAuthentication.pam_plugin_name, 'chfn') as u:
             try:
                c = pymysql.connect(user=TestAuthentication.osuser, **db)
             except pymysql.OperationalError as e:
