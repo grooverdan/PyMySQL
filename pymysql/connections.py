@@ -1129,7 +1129,7 @@ class Connection(object):
                 last = (flag & 0x01) == 0x01
                 prompt = pkt.read_all()
 
-                if prompt == "Password: ":
+                if prompt == b"Password: ":
                     self.write_packet(self.password.encode('latin1') + b'\0')
                 elif handler:
                     resp = 'no response - TypeError within plugin.prompt method'

@@ -137,6 +137,30 @@ class TestAuthentication(base.PyMySQLTestCase):
                return b'bad guess at a password'
             return self.m.get(prompt)
 
+    class DialogHandler(object):
+
+        def __init__(self, con):
+            self.con=con
+
+        def authenticate(pkt):
+            while True:
+                flag = pkt.read_uint8()
+                echo = (flag & 0x06) == 0x02
+                last = (flag & 0x01) == 0x01
+                prompt = pkt.read_all()
+
+                if prompt == b'Password, please:':
+                    self.con.write_packet(b'notverysecret\0')
+                else:
+                    self.con.write_packet(b'no idea what to do with this prompt\0')
+                pkt = self.con._read_packet()
+                pkt.check_error()
+                if pkt.is_ok_packet() or last:
+                    break
+            return pkt
+
+
+
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipIf(two_questions_found, "two_questions plugin already installed")
     def testDialogAuthTwoQuestionsInstallPlugin(self):
@@ -195,11 +219,12 @@ class TestAuthentication(base.PyMySQLTestCase):
         with TempUser(self.connections[0].cursor(), 'pymysql_3a@localhost',
                       self.databases[0]['db'], 'three_attempts', 'stillnotverysecret') as u:
             pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
+            pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': TestAuthentication.DialogHandler}, **self.db)
+            with self.assertRaises(pymysql.err.OperationalError):
+                pymysql.connect(user='pymysql_3a', plugin_map={b'notdialogplugin': TestAuthentication.Dialog}, **self.db)
             TestAuthentication.Dialog.m = {b'Password, please:': b'I do not know'}
             with self.assertRaises(pymysql.err.OperationalError):
                 pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
-            with self.assertRaises(pymysql.err.OperationalError):
-                pymysql.connect(user='pymysql_3a', plugin_map={b'notdialogplugin': TestAuthentication.Dialog}, **self.db)
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(pam_found, "no pam plugin")
