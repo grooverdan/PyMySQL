@@ -47,7 +47,7 @@ matrix:
 #             - DB=5.7.8-rc
 
 install:
-    - if [ -n "${EXTRAPKG}" ; then
+    - if [ -n "${EXTRAPKG}" ]; then
           sudo apt-get install ${EXTRAPKG};
       fi
     - pip install -U tox coveralls
