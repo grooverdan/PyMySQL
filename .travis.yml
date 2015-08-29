@@ -76,7 +76,7 @@ script:
     - mysql -u root -e "create user ${USER} IDENTIFIED WITH pam AS 'chfn'" || false
     - mysql -u ${USER} -ptravis -e 'show grants'
 # is interactive    - mysql -e 'show grants'
-    - sed -i -e "s/root/${USER}/g" -e 's/\("passw\(ord\)?d": "\)[^"]*/\1travis/g' pymysql/tests/databases.json
+    - sed -i -e 's/root/${USER}/g' -e 's/\("passw\(ord\)?d": \"\)[^"]*/\1travis/g' pymysql/tests/databases.json
     - tox -e $TOX_ENV
 
 
