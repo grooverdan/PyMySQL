@@ -242,12 +242,31 @@ class TestAuthentication(base.PyMySQLTestCase):
                 pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
+    @unittest2.skipIf(pam_found, "pam plugin already installed")
+    def testPamAuthInstallPlugin(self):
+        # needs plugin. lets install it.
+        cur = self.connections[0].cursor()
+        try:
+            cur.execute("install plugin pam soname 'auth_pam.so'")
+            TestAuthentication.pam_found = True
+            self.realTestPamAuth()
+        except pymysql.err.InternalError:
+            raise unittest2.SkipTest('we couldn\'t install the auth_pam plugin')
+        finally:
+            if TestAuthentication.pam_found:
+                cur.execute("uninstall plugin pam")
+
+
+    @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(pam_found, "no pam plugin")
     def testPamAuth(self):
+        self.realTestPamAuth()
+
+    def realTestPamAuth(self):
         db = self.db.copy()
-        db['password'] = b'bad guess at password'
+        db['password'] = b'travis'
         with TempUser(self.connections[0].cursor(), TestAuthentication.osuser + '@localhost',
-                      self.databases[0]['db'], self.pam_plugin_name) as u:
+                      self.databases[0]['db'], self.pam_plugin_name, 'chfn') as u:
             try:
                c = pymysql.connect(user=TestAuthentication.osuser, **db)
             except pymysql.OperationalError as e:

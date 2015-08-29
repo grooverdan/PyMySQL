@@ -1,9 +1,6 @@
 sudo: required
 language: python
 python: "3.4"
-cache:
-    directories:
-        - mysql
 
 matrix:
     include:
@@ -32,6 +29,9 @@ matrix:
               apt:
                  packages:
                      - libaio-dev
+          cache:
+              directories:
+                  - mysql
 # really only need libaio1 however libaio-dev is whitelisted
 #
 # http://dev.mysql.com/downloads/mysql/5.7.html
@@ -72,18 +72,6 @@ before_script:
 
 script:
     - tox -e $TOX_ENV
-    - find /etc/pam.d/  -type f -ls -exec cat {} \;
-    - find /usr/lib/mysql/plugin -type f -ls
-    - mysql -u root -e "drop user ${USER}@localhost; drop user ${USER}" || false
-    - mysql -u root -e "INSTALL PLUGIN pam SONAME 'auth_pam.so'"
-#  not part of 56/57 mysql -u root -e "INSTALL PLUGIN pam SONAME 'authentication_pam.so'"
-    - mysql -u root -e "create user ${USER}@localhost IDENTIFIED WITH pam AS 'chfn'" || false
-    - mysql -u root -e "create user ${USER} IDENTIFIED WITH pam AS 'chfn'" || false
-    - mysql -u ${USER} -ptravis -e 'show grants'
-# is interactive    - mysql -e 'show grants'
-    - sed -i -e 's/root/${USER}/g' -e 's/\("passw\(ord\)?d": \"\)[^"]*/\1travis/g' pymysql/tests/databases.json
-    - tox -e $TOX_ENV
-
 
 after_success:
     - coveralls
