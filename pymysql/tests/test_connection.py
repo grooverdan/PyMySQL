@@ -85,6 +85,10 @@ class TestAuthentication(base.PyMySQLTestCase):
             # Names differ but functionality is close
         elif (r[0], r[1], r[2]) ==  (u'mysql_old_password', u'ACTIVE', u'AUTHENTICATION'):
             mysql_old_password_found = True
+        elif (r[0], r[1], r[2]) ==  (u'sha256password', u'ACTIVE', u'AUTHENTICATION'):
+            sha265_password_found = True
+        elif (r[0], r[1], r[2]) ==  (u'mysql_clear_password', u'ACTIVE', u'AUTHENTICATION'):
+            clear_password_found = True
 
     def test_plugin(self):
         # Bit of an assumption that the current user is a native password
@@ -294,6 +298,67 @@ class TestAuthentication(base.PyMySQLTestCase):
                 cur = pymysql.connect(user='old_pass_user', **db).cursor()
                 cur.execute("SELECT VERSION()")
             c.execute('set global secure_auth=%r' % secure_auth_setting)
+
+    @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
+    @unittest2.skipIf(clear_password_found, "mysql_clear_password plugin already installed")
+    def testDialogAuthClearInstallPlugin(self):
+        # needs plugin. lets install it.
+        cur = self.connections[0].cursor()
+        try:
+            cur.execute("install plugin mysql_clear_password soname 'mysql_clear_password.so'")
+            TestAuthentication.clear_password_found = True
+            self.realTestDialogClear()
+        except pymysql.err.InternalError:
+            raise unittest2.SkipTest('we couldn\'t install the mysql_clear_password plugin')
+        finally:
+            if TestAuthentication.clear_password_found:
+                cur = self.connections[0].cursor()
+                cur.execute("uninstall plugin mysql_clear_password")
+
+    @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
+    @unittest2.skipUnless(clear_password_found, "no mysql_clear_password plugin found")
+    def testDialogAuthClear(self):
+        self.realTestDialogClear()
+
+    def realTestDialogAuthClear(self):
+        c = self.connections[0].cursor()
+        with TempUser(c, 'pymysql_clear@localhost',
+                      self.databases[0]['db'], 'mysql_clear_password', 'not secure') as u:
+            db = self.db.copy()
+            db['password'] = "not secure"
+            pymysql.connect(user='pymysql_clear', **db)
+
+    @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
+    @unittest2.skipIf(sha256_password_found, "sha256 password plugin already installed")
+    def testDialogAuthSHA256InstallPlugin(self):
+        # needs plugin. lets install it.
+        cur = self.connections[0].cursor()
+        try:
+            cur.execute("install plugin sha256_password soname 'sha256_password.so'")
+            TestAuthentication.sha256_password_found = True
+            self.realTestDialogAuthSHA256()
+        except pymysql.err.InternalError:
+            raise unittest2.SkipTest('we couldn\'t install the sha256 plugin')
+        finally:
+            if TestAuthentication.sha256_password_found:
+                cur = self.connections[0].cursor()
+                cur.execute("uninstall plugin sha256")
+
+    @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
+    @unittest2.skipUnless(sha256_password_found, "no sha256 password found")
+    def testDialogAuthSHA256(self):
+        self.realTestDialogSHA256()
+
+    def realTestDialogAuthSHA256(self):
+        c = self.connections[0].cursor()
+        with TempUser(c, 'pymysql_sha256@localhost',
+                      self.databases[0]['db'], 'sha256_password') as u:
+            c.execute('SET old_passwords = 2')
+            c.execute("SET PASSWORD FOR 'pymysql_sha256user'@'localhost' = PASSWORD('Sh@256Pa33')")
+            db = self.db.copy()
+            db['password'] = "Sh@256Pa33"
+            with self.assertRaises(pymysql.err.OperationalError):
+                pymysql.connect(user='pymysql_256', **db)
 
 class TestConnection(base.PyMySQLTestCase):
 
