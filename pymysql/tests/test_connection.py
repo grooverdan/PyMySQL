@@ -134,7 +134,7 @@ class TestAuthentication(base.PyMySQLTestCase):
         def prompt(self, echo, prompt):
             if self.fail:
                self.fail=False
-               return 'bad guess at a password'
+               return b'bad guess at a password'
             return self.m.get(prompt)
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
@@ -198,7 +198,7 @@ class TestAuthentication(base.PyMySQLTestCase):
     @unittest2.skipUnless(pam_found, "no pam plugin")
     def testPamAuth(self):
         db = self.db.copy()
-        db['password'] = 'bad guess at password'
+        db['password'] = b'bad guess at password'
         with TempUser(self.connections[0].cursor(), TestAuthentication.osuser + '@localhost',
                       self.databases[0]['db'], self.pam_plugin_name) as u:
             try:
