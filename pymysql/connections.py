@@ -1109,10 +1109,10 @@ class Connection(object):
             except AttributeError:
                 if plugin_name != b'dialog':
                     raise err.OperationalError(2059, "Authentication plugin '%s'" +
-                              " not loaded: - %r missing authenticate method" % (plugin, plugin_class))
+                              " not loaded: - %r missing authenticate method" % (plugin_name, plugin_class))
             except TypeError:
                 raise err.OperationalError(2059, "Authentication plugin '%s'" +
-                    " not loaded: - %r cannot be constructed with connection object" % (plugin, plugin_class))
+                    " not loaded: - %r cannot be constructed with connection object" % (plugin_name, plugin_class))
         else:
             handler = None
         if plugin_name == b"mysql_native_password":
