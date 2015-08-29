@@ -168,7 +168,7 @@ class TestAuthentication(base.PyMySQLTestCase):
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipIf(three_attempts_found, "three_attempts plugin already installed")
-    def testDialogAuthTwoQuestionsInstallPlugin(self):
+    def testDialogAuthThreeAttemptsQuestionsInstallPlugin(self):
         # needs plugin. lets install it.
         cur = self.connections[0].cursor()
         try:
