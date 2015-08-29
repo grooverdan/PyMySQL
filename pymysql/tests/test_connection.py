@@ -324,13 +324,13 @@ class TestAuthentication(base.PyMySQLTestCase):
 
     def realTestAuthClear(self):
         c = self.connections[0].cursor()
-        with TempUser(c, 'pymysql_clear@localhost',
+        with TempUser(c, 'qa_test_11_user@localhost',
                       self.databases[0]['db'], 'qa_auth_server', 'not secure') as u:
             db = self.db.copy()
             db['password'] = "not secure"
             # not implemented - requests qa_auth_interface plugin
             with self.assertRaises(pymysql.err.OperationalError):
-                pymysql.connect(user='pymysql_clear', **db)
+                pymysql.connect(user='qa_test_11_user', **db)
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(sha256_password_found, "no sha256 password authentication plugin found")
