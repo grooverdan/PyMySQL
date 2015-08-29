@@ -48,6 +48,7 @@ class TestAuthentication(base.PyMySQLTestCase):
     three_attempts_found = False
     pam_found = False
     mysql_old_password_found = False
+    sha256_password_found = False
 
     import os
     osuser = os.environ.get('USER')
@@ -63,15 +64,17 @@ class TestAuthentication(base.PyMySQLTestCase):
     del db['user']
     cur.execute("SHOW PLUGINS")
     for r in cur:
-        if (r[1], r[2], r[3]) ==  (u'ACTIVE', u'AUTHENTICATION', u'auth_socket.so'):
+        if (r[1], r[2]) !=  (u'ACTIVE', u'AUTHENTICATION'):
+            continue
+        if r[3] ==  u'auth_socket.so':
             socket_plugin_name = r[0]
             socket_found = True
-        elif (r[1], r[2], r[3]) ==  (u'ACTIVE', u'AUTHENTICATION', u'dialog_examples.so'):
+        elif r[3] ==  u'dialog_examples.so':
             if r[0] == 'two_questions':
                 two_questions_found =  True
             elif r[0] == 'three_attempts':
                 three_attempts_found =  True
-        elif (r[0], r[1], r[2]) ==  (u'pam', u'ACTIVE', u'AUTHENTICATION'):
+        elif r[0] ==  u'pam':
             pam_found = True
             pam_plugin_name = r[3].split('.')[0]
             if pam_plugin_name == 'auth_pam':
@@ -83,8 +86,12 @@ class TestAuthentication(base.PyMySQLTestCase):
             # https://mariadb.com/kb/en/mariadb/pam-authentication-plugin/
 
             # Names differ but functionality is close
-        elif (r[0], r[1], r[2]) ==  (u'mysql_old_password', u'ACTIVE', u'AUTHENTICATION'):
+        elif r[0] ==  u'mysql_old_password':
             mysql_old_password_found = True
+        elif r[0] ==  u'sha256_password':
+            sha256_password_found = True
+        #else:
+        #    print("plugin: %r" % r[0])
 
     def test_plugin(self):
         # Bit of an assumption that the current user is a native password
@@ -111,7 +118,6 @@ class TestAuthentication(base.PyMySQLTestCase):
                 raise unittest2.SkipTest('we couldn\'t install the socket plugin')
         finally:
             if TestAuthentication.socket_found:
-                cur = self.connections[0].cursor()
                 cur.execute("uninstall plugin %s" % self.socket_plugin_name)
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
@@ -134,33 +140,112 @@ class TestAuthentication(base.PyMySQLTestCase):
         def prompt(self, echo, prompt):
             if self.fail:
                self.fail=False
-               return 'bad guess at a password'
+               return b'bad guess at a password'
             return self.m.get(prompt)
+
+    class DialogHandler(object):
+
+        def __init__(self, con):
+            self.con=con
+
+        def authenticate(self, pkt):
+            while True:
+                flag = pkt.read_uint8()
+                echo = (flag & 0x06) == 0x02
+                last = (flag & 0x01) == 0x01
+                prompt = pkt.read_all()
+
+                if prompt == b'Password, please:':
+                    self.con.write_packet(b'stillnotverysecret\0')
+                else:
+                    self.con.write_packet(b'no idea what to do with this prompt\0')
+                pkt = self.con._read_packet()
+                pkt.check_error()
+                if pkt.is_ok_packet() or last:
+                    break
+            return pkt
+
+
+
+    @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
+    @unittest2.skipIf(two_questions_found, "two_questions plugin already installed")
+    def testDialogAuthTwoQuestionsInstallPlugin(self):
+        # needs plugin. lets install it.
+        cur = self.connections[0].cursor()
+        try:
+            cur.execute("install plugin two_questions soname 'dialog_examples.so'")
+            TestAuthentication.two_questions_found = True
+            self.realTestDialogAuthTwoQuestions()
+        except pymysql.err.InternalError:
+            raise unittest2.SkipTest('we couldn\'t install the two_questions plugin')
+        finally:
+            if TestAuthentication.two_questions_found:
+                cur.execute("uninstall plugin two_questions")
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(two_questions_found, "no two questions auth plugin")
     def testDialogAuthTwoQuestions(self):
+        self.realTestDialogAuthTwoQuestions()
+
+    def realTestDialogAuthTwoQuestions(self):
         TestAuthentication.Dialog.fail=False
-        TestAuthentication.Dialog.m = {'Password, please:': b'notverysecret',
-                    'Are you sure ?': b'yes, of course'}
-        with TempUser(self.connections[0].cursor(), 'pymysql_test_two_questions@localhost',
+        TestAuthentication.Dialog.m = {b'Password, please:': b'notverysecret',
+                                       b'Are you sure ?': b'yes, of course'}
+        with TempUser(self.connections[0].cursor(), 'pymysql_2q@localhost',
                       self.databases[0]['db'], 'two_questions', 'notverysecret') as u:
-            pymysql.connect(user='pymysql_test_two_questions', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
+            with self.assertRaises(pymysql.err.OperationalError):
+                pymysql.connect(user='pymysql_2q', **self.db)
+            pymysql.connect(user='pymysql_2q', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
+
+    @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
+    @unittest2.skipIf(three_attempts_found, "three_attempts plugin already installed")
+    def testDialogAuthThreeAttemptsQuestionsInstallPlugin(self):
+        # needs plugin. lets install it.
+        cur = self.connections[0].cursor()
+        try:
+            cur.execute("install plugin three_attempts soname 'dialog_examples.so'")
+            TestAuthentication.three_attempts_found = True
+            self.realTestDialogAuthThreeAttempts()
+        except pymysql.err.InternalError:
+            raise unittest2.SkipTest('we couldn\'t install the three_attempts plugin')
+        finally:
+            if TestAuthentication.three_attempts_found:
+                cur.execute("uninstall plugin three_attempts")
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(three_attempts_found, "no three attempts plugin")
     def testDialogAuthThreeAttempts(self):
-        TestAuthentication.Dialog.m = {'Password, please:': b'stillnotverysecret'}
+        self.realTestDialogAuthThreeAttempts()
+
+    def realTestDialogAuthThreeAttempts(self):
+        TestAuthentication.Dialog.m = {b'Password, please:': b'stillnotverysecret'}
         TestAuthentication.Dialog.fail=True   # fail just once. We've got three attempts after all
-        with TempUser(self.connections[0].cursor(), 'pymysql_test_three_attempts@localhost',
+        with TempUser(self.connections[0].cursor(), 'pymysql_3a@localhost',
                       self.databases[0]['db'], 'three_attempts', 'stillnotverysecret') as u:
-            pymysql.connect(user='pymysql_test_three_attempts', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
+            pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
+            pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': TestAuthentication.DialogHandler}, **self.db)
+            with self.assertRaises(pymysql.err.OperationalError):
+                pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': object}, **self.db)
+
+            class DefectiveHandler(object):
+                def __init__(self, con):
+                    self.con=con
+            with self.assertRaises(pymysql.err.OperationalError):
+                pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': DefectiveHandler}, **self.db)
+            with self.assertRaises(pymysql.err.OperationalError):
+                pymysql.connect(user='pymysql_3a', plugin_map={b'notdialogplugin': TestAuthentication.Dialog}, **self.db)
+            TestAuthentication.Dialog.m = {b'Password, please:': b'I do not know'}
+            with self.assertRaises(pymysql.err.OperationalError):
+                pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
+            TestAuthentication.Dialog.m = {b'Password, please:': None}
+            with self.assertRaises(pymysql.err.OperationalError):
+                pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(pam_found, "no pam plugin")
     def testPamAuth(self):
         db = self.db.copy()
-        db['password'] = 'bad guess at password'
+        db['password'] = b'bad guess at password'
         with TempUser(self.connections[0].cursor(), TestAuthentication.osuser + '@localhost',
                       self.databases[0]['db'], self.pam_plugin_name) as u:
             try:
@@ -213,6 +298,20 @@ class TestAuthentication(base.PyMySQLTestCase):
                 cur = pymysql.connect(user='old_pass_user', **db).cursor()
                 cur.execute("SELECT VERSION()")
             c.execute('set global secure_auth=%r' % secure_auth_setting)
+
+    @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
+    @unittest2.skipUnless(sha256_password_found, "no sha256 password authentication plugin found")
+    def testAuthSHA256(self):
+        c = self.connections[0].cursor()
+        with TempUser(c, 'pymysql_sha256@localhost',
+                      self.databases[0]['db'], 'sha256_password') as u:
+            c.execute('SET old_passwords = 2')
+            c.execute("SET PASSWORD FOR 'pymysql_sha256'@'localhost' = PASSWORD('Sh@256Pa33')")
+            db = self.db.copy()
+            db['password'] = "Sh@256Pa33"
+            # not implemented yet so thows error
+            with self.assertRaises(pymysql.err.OperationalError):
+                pymysql.connect(user='pymysql_256', **db)
 
 class TestConnection(base.PyMySQLTestCase):
 
