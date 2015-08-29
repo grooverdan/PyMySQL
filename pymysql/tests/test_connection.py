@@ -344,6 +344,7 @@ class TestAuthentication(base.PyMySQLTestCase):
             c.execute("SET PASSWORD FOR 'pymysql_sha256'@'localhost' = PASSWORD('Sh@256Pa33')")
             db = self.db.copy()
             db['password'] = "Sh@256Pa33"
+            # not implemented yet so thows error
             with self.assertRaises(pymysql.err.OperationalError):
                 pymysql.connect(user='pymysql_256', **db)
 
