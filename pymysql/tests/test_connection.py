@@ -225,7 +225,7 @@ class TestAuthentication(base.PyMySQLTestCase):
 
             class DefectiveHandler(object):
                 def __init__(self, con):
-                    self.con=conf
+                    self.con=con
             with self.assertRaises(pymysql.err.OperationalError):
                 pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': DefectiveHandler}, **self.db)
             with self.assertRaises(pymysql.err.OperationalError):
