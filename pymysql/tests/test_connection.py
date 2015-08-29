@@ -198,6 +198,8 @@ class TestAuthentication(base.PyMySQLTestCase):
             TestAuthentication.Dialog.m = {b'Password, please:': b'I do not know'}
             with self.assertRaises(pymysql.err.OperationalError):
                 pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
+            with self.assertRaises(pymysql.err.OperationalError):
+                pymysql.connect(user='pymysql_3a', plugin_map={b'notdialogplugin': TestAuthentication.Dialog}, **self.db)
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(pam_found, "no pam plugin")
