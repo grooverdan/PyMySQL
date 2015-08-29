@@ -1135,7 +1135,7 @@ class Connection(object):
                     resp = 'no response - TypeError within plugin.prompt method'
                     try:
                         resp = handler.prompt(echo, prompt)
-                        self.write_packet(resp.encode('latin1') + b'\0')
+                        self.write_packet(resp + b'\0')
                     except AttributeError:
                         raise err.OperationalError(2059, "Authentication plugin '%s'" +
                                   " not loaded: - missing prompt method" % plugin_name)
