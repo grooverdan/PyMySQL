@@ -1,18 +1,9 @@
-sudo: false
+sudo: required
 language: python
 python: "3.4"
 cache:
     directories:
         - mysql
-
-env:
-    matrix:
-        - TOX_ENV=py26
-        - TOX_ENV=py27
-        - TOX_ENV=py33
-        - TOX_ENV=py34
-        - TOX_ENV=pypy
-        - TOX_ENV=pypy3
 
 matrix:
     include:
@@ -40,6 +31,7 @@ matrix:
 #             - DB=5.7.8-rc
 
 install:
+    - sudo apt-get install mariadb-test
     - pip install -U tox coveralls
 
 before_script:
