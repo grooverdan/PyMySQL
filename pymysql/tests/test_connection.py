@@ -222,6 +222,12 @@ class TestAuthentication(base.PyMySQLTestCase):
             pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': TestAuthentication.DialogHandler}, **self.db)
             with self.assertRaises(pymysql.err.OperationalError):
                 pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': object}, **self.db)
+
+            class DefectiveHandler(object):
+                def __init__(self, con):
+                    self.con=conf
+            with self.assertRaises(pymysql.err.OperationalError):
+                pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': DefectiveHandler}, **self.db)
             with self.assertRaises(pymysql.err.OperationalError):
                 pymysql.connect(user='pymysql_3a', plugin_map={b'notdialogplugin': TestAuthentication.Dialog}, **self.db)
             TestAuthentication.Dialog.m = {b'Password, please:': b'I do not know'}
