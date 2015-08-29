@@ -162,9 +162,9 @@ class TestAuthentication(base.PyMySQLTestCase):
         TestAuthentication.Dialog.fail=False
         TestAuthentication.Dialog.m = {'Password, please:': b'notverysecret',
                     'Are you sure ?': b'yes, of course'}
-        with TempUser(self.connections[0].cursor(), 'pymysql_test_two_questions@localhost',
+        with TempUser(self.connections[0].cursor(), 'pymysql_2q@localhost',
                       self.databases[0]['db'], 'two_questions', 'notverysecret') as u:
-            pymysql.connect(user='pymysql_test_two_questions', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
+            pymysql.connect(user='pymysql_2q', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipIf(three_attempts_found, "three_attempts plugin already installed")
@@ -190,9 +190,9 @@ class TestAuthentication(base.PyMySQLTestCase):
     def realTestDialogAuthThreeAttempts(self):
         TestAuthentication.Dialog.m = {'Password, please:': b'stillnotverysecret'}
         TestAuthentication.Dialog.fail=True   # fail just once. We've got three attempts after all
-        with TempUser(self.connections[0].cursor(), 'pymysql_test_three_attempts@localhost',
+        with TempUser(self.connections[0].cursor(), 'pymysql_3a@localhost',
                       self.databases[0]['db'], 'three_attempts', 'stillnotverysecret') as u:
-            pymysql.connect(user='pymysql_test_three_attempts', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
+            pymysql.connect(user='pymysql_3a', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
     @unittest2.skipUnless(pam_found, "no pam plugin")
