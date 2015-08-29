@@ -108,6 +108,7 @@ class TestConnection(base.PyMySQLTestCase):
         # TODO validate setting here
 
     def test_defer_connect(self):
+        import socket
         for db in self.databases:
             d = db.copy()
             try:
