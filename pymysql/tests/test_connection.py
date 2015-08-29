@@ -142,7 +142,7 @@ class TestAuthentication(base.PyMySQLTestCase):
         def __init__(self, con):
             self.con=con
 
-        def authenticate(pkt):
+        def authenticate(self, pkt):
             while True:
                 flag = pkt.read_uint8()
                 echo = (flag & 0x06) == 0x02
