@@ -48,6 +48,8 @@ class TestAuthentication(base.PyMySQLTestCase):
     three_attempts_found = False
     pam_found = False
     mysql_old_password_found = False
+    sha256_password_found = False
+    clear_password_found = False
 
     import os
     osuser = os.environ.get('USER')
@@ -86,7 +88,7 @@ class TestAuthentication(base.PyMySQLTestCase):
         elif (r[0], r[1], r[2]) ==  (u'mysql_old_password', u'ACTIVE', u'AUTHENTICATION'):
             mysql_old_password_found = True
         elif (r[0], r[1], r[2]) ==  (u'sha256password', u'ACTIVE', u'AUTHENTICATION'):
-            sha265_password_found = True
+            sha256_password_found = True
         elif (r[0], r[1], r[2]) ==  (u'mysql_clear_password', u'ACTIVE', u'AUTHENTICATION'):
             clear_password_found = True
 
