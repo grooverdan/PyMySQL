@@ -160,8 +160,8 @@ class TestAuthentication(base.PyMySQLTestCase):
 
     def realTestDialogAuthTwoQuestions(self):
         TestAuthentication.Dialog.fail=False
-        TestAuthentication.Dialog.m = {'Password, please:': b'notverysecret',
-                    'Are you sure ?': b'yes, of course'}
+        TestAuthentication.Dialog.m = {b'Password, please:': b'notverysecret',
+                                       b'Are you sure ?': b'yes, of course'}
         with TempUser(self.connections[0].cursor(), 'pymysql_2q@localhost',
                       self.databases[0]['db'], 'two_questions', 'notverysecret') as u:
             pymysql.connect(user='pymysql_2q', plugin_map={b'dialog': TestAuthentication.Dialog}, **self.db)
@@ -188,7 +188,7 @@ class TestAuthentication(base.PyMySQLTestCase):
         self.realTestDialogAuthThreeAttempts()
 
     def realTestDialogAuthThreeAttempts(self):
-        TestAuthentication.Dialog.m = {'Password, please:': b'stillnotverysecret'}
+        TestAuthentication.Dialog.m = {b'Password, please:': b'stillnotverysecret'}
         TestAuthentication.Dialog.fail=True   # fail just once. We've got three attempts after all
         with TempUser(self.connections[0].cursor(), 'pymysql_3a@localhost',
                       self.databases[0]['db'], 'three_attempts', 'stillnotverysecret') as u:
