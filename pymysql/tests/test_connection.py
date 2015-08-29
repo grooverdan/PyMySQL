@@ -121,7 +121,6 @@ class TestAuthentication(base.PyMySQLTestCase):
                 raise unittest2.SkipTest('we couldn\'t install the socket plugin')
         finally:
             if TestAuthentication.socket_found:
-                cur = self.connections[0].cursor()
                 cur.execute("uninstall plugin %s" % self.socket_plugin_name)
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
@@ -184,7 +183,6 @@ class TestAuthentication(base.PyMySQLTestCase):
             raise unittest2.SkipTest('we couldn\'t install the two_questions plugin')
         finally:
             if TestAuthentication.two_questions_found:
-                cur = self.connections[0].cursor()
                 cur.execute("uninstall plugin two_questions")
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
@@ -215,7 +213,6 @@ class TestAuthentication(base.PyMySQLTestCase):
             raise unittest2.SkipTest('we couldn\'t install the three_attempts plugin')
         finally:
             if TestAuthentication.three_attempts_found:
-                cur = self.connections[0].cursor()
                 cur.execute("uninstall plugin three_attempts")
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
@@ -318,7 +315,6 @@ class TestAuthentication(base.PyMySQLTestCase):
             raise unittest2.SkipTest('we couldn\'t install the qa_auth_server plugin')
         finally:
             if TestAuthentication.clear_password_found:
-                cur = self.connections[0].cursor()
                 cur.execute("uninstall plugin qa_auth_server")
 
     @unittest2.skipUnless(socket_auth, "connection to unix_socket required")
