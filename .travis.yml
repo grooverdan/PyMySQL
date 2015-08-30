@@ -76,7 +76,7 @@ before_script:
     - export COVERALLS_PARALLEL=true
 
 script:
-    - tox -e $TOX_ENV
+    - tox
 
 after_success:
     - coveralls
