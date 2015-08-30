@@ -1009,7 +1009,7 @@ class Connection(object):
             if DEBUG: dump_packet(data)
             self._write_bytes(data)
 
-            if _py_version == (2, 7):
+            if _py_version == (2, 6):
                 cert_reqs = ssl.CERT_NONE if self.ca is None else ssl.CERT_REQUIRED
                 self.socket = ssl.wrap_socket(self.socket, keyfile=self.key,
                                               certfile=self.cert,
