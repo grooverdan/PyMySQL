@@ -534,7 +534,7 @@ class Connection(object):
         connect_timeout: Timeout before throwing an exception when connecting.
         ssl:
             A dict of arguments similar to mysql_ssl_set()'s parameters.
-            For now the capath and cipher arguments are not supported.
+            For now the capath is only support on python version that support SSLContext.
         read_default_group: Group to read from in the configuration file.
         compress; Not supported
         named_pipe: Not supported
@@ -568,16 +568,13 @@ class Connection(object):
         if local_infile:
             client_flag |= CLIENT.LOCAL_FILES
 
-        if ssl and ('capath' in ssl or 'cipher' in ssl):
-            raise NotImplementedError('ssl options capath and cipher are not supported')
-
         self.ssl = False
         if ssl:
             if not SSL_ENABLED:
                 raise NotImplementedError("ssl module not found")
             self.ssl = True
             client_flag |= CLIENT.SSL
-            for k in ('key', 'cert', 'ca'):
+            for k in ('key', 'cert', 'ca', 'cipher', 'capath'):
                 v = None
                 if k in ssl:
                     v = ssl[k]
@@ -1010,17 +1007,22 @@ class Connection(object):
             self._write_bytes(data)
 
             try:
-                ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile=self.ca)
-                ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+                ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH,
+                                                 cafile=self.ca,
+                                                 capath=self.capath)
                 ctx.load_cert_chain(self.cert, keyfile=self.key)
+                ctx.set_ciphers(self.cipher)
                 ssl.socket = ctx.wrap_socket(self.socket)
             except AttributeError:
+                if self.capath:
+                   raise NotImplementedError('ssl option capath not supported in this python version')
                 cert_reqs = ssl.CERT_NONE if self.ca is None else ssl.CERT_REQUIRED
                 self.socket = ssl.wrap_socket(self.socket, keyfile=self.key,
                                               certfile=self.cert,
                                               ssl_version=ssl.PROTOCOL_TLSv1,
                                               cert_reqs=cert_reqs,
-                                              ca_certs=self.ca)
+                                              ca_certs=self.ca,
+                                              ciphers=self.cipher)
 
             self._rfile = _makefile(self.socket, 'rb')
 
