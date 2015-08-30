@@ -1009,12 +1009,21 @@ class Connection(object):
             if DEBUG: dump_packet(data)
             self._write_bytes(data)
 
-            cert_reqs = ssl.CERT_NONE if self.ca is None else ssl.CERT_REQUIRED
-            self.socket = ssl.wrap_socket(self.socket, keyfile=self.key,
-                                          certfile=self.cert,
-                                          ssl_version=ssl.PROTOCOL_TLSv1,
-                                          cert_reqs=cert_reqs,
-                                          ca_certs=self.ca)
+            if _py_version == (2, 7):
+                cert_reqs = ssl.CERT_NONE if self.ca is None else ssl.CERT_REQUIRED
+                self.socket = ssl.wrap_socket(self.socket, keyfile=self.key,
+                                              certfile=self.cert,
+                                              ssl_version=ssl.PROTOCOL_TLSv1,
+                                              cert_reqs=cert_reqs,
+                                              ca_certs=self.ca)
+            else:
+                try:
+                    ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, self.ca)
+                except AttributeError:
+                    ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+                ctx.load_cert_chain(self.cert, keyfile=self.key)
+                ssl.socket = ctx.wrap_socket(self.socket)
+
             self._rfile = _makefile(self.socket, 'rb')
 
         data = data_init + self.user + b'\0' + \
