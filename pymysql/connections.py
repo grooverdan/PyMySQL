@@ -534,7 +534,8 @@ class Connection(object):
         connect_timeout: Timeout before throwing an exception when connecting.
         ssl:
             A dict of arguments similar to mysql_ssl_set()'s parameters.
-            For now the capath is only support on python version that support SSLContext.
+            capath is only supported on python version that support SSLContext (3.2+/2.7.9+).
+            cipher isn't supported on python-2.6.
         read_default_group: Group to read from in the configuration file.
         compress; Not supported
         named_pipe: Not supported
@@ -1011,18 +1012,28 @@ class Connection(object):
                                                  cafile=self.ca,
                                                  capath=self.capath)
                 ctx.load_cert_chain(self.cert, keyfile=self.key)
-                ctx.set_ciphers(self.cipher)
+                if self.cipher is not None:
+                    ctx.set_ciphers(self.cipher)
                 ssl.socket = ctx.wrap_socket(self.socket)
             except AttributeError:
                 if self.capath:
                    raise NotImplementedError('ssl option capath not supported in this python version')
                 cert_reqs = ssl.CERT_NONE if self.ca is None else ssl.CERT_REQUIRED
-                self.socket = ssl.wrap_socket(self.socket, keyfile=self.key,
-                                              certfile=self.cert,
-                                              ssl_version=ssl.PROTOCOL_TLSv1,
-                                              cert_reqs=cert_reqs,
-                                              ca_certs=self.ca,
-                                              ciphers=self.cipher)
+                try:
+                    self.socket = ssl.wrap_socket(self.socket, keyfile=self.key,
+                                                  certfile=self.cert,
+                                                  ssl_version=ssl.PROTOCOL_TLSv1,
+                                                  cert_reqs=cert_reqs,
+                                                  ca_certs=self.ca,
+                                                  ciphers=self.cipher)
+                except TypeError:
+                    if self.cipher is not None:
+                        raise NotImplementedError('ssl option cipher not supported in this python version')
+                    self.socket = ssl.wrap_socket(self.socket, keyfile=self.key,
+                                                  certfile=self.cert,
+                                                  ssl_version=ssl.PROTOCOL_TLSv1,
+                                                  cert_reqs=cert_reqs,
+                                                  ca_certs=self.ca)
 
             self._rfile = _makefile(self.socket, 'rb')
 
