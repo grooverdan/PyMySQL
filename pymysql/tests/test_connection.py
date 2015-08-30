@@ -129,6 +129,7 @@ class TestConnection(base.PyMySQLTestCase):
             c = pymysql.connect(defer_connect=True, **d)
             self.assertFalse(c.open)
             c.connect(sock)
+            c.close()
 
     keyfile = os.path.join(os.path.dirname(__file__), "client-key.pem")
     certfile = os.path.join(os.path.dirname(__file__), "client-cert.pem")
