@@ -1010,7 +1010,7 @@ class Connection(object):
             self._write_bytes(data)
 
             try:
-                ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, self.ca)
+                ctx = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile=self.ca)
                 ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
                 ctx.load_cert_chain(self.cert, keyfile=self.key)
                 ssl.socket = ctx.wrap_socket(self.socket)
