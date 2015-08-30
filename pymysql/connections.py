@@ -1012,6 +1012,7 @@ class Connection(object):
                                                  cafile=self.ca,
                                                  capath=self.capath)
                 ctx.load_cert_chain(self.cert, keyfile=self.key)
+                ctx.verify_mode = ssl.CERT_NONE if self.ca is None else ssl.CERT_REQUIRED
                 if self.cipher is not None:
                     ctx.set_ciphers(self.cipher)
                 ssl.socket = ctx.wrap_socket(self.socket)
@@ -1022,7 +1023,7 @@ class Connection(object):
                 try:
                     self.socket = ssl.wrap_socket(self.socket, keyfile=self.key,
                                                   certfile=self.cert,
-                                                  ssl_version=(ssl.PROTOCOL_SSLv23 | ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3),
+                                                  ssl_version=ssl.PROTOCOL_TLSv1,
                                                   cert_reqs=cert_reqs,
                                                   ca_certs=self.ca,
                                                   ciphers=self.cipher)
@@ -1031,7 +1032,7 @@ class Connection(object):
                         warnings.warn('ssl option cipher not supported in this python version')
                     self.socket = ssl.wrap_socket(self.socket, keyfile=self.key,
                                                   certfile=self.cert,
-                                                  ssl_version=(ssl.PROTOCOL_SSLv23 | ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3),
+                                                  ssl_version=ssl.PROTOCOL_TLSv1,
                                                   cert_reqs=cert_reqs,
                                                   ca_certs=self.ca)
 
