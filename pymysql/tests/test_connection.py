@@ -144,8 +144,11 @@ class TestConnection(base.PyMySQLTestCase):
             'cert': TestConnection.certfile,
             'ca': TestConnection.cafile,
         }
-        with self.assertWarns(DeprecationWarning) as cm:
-            conn = pymysql.connect(**current_db)
+        conn = pymysql.connect(**current_db)
+        with conn as cur:
+            cur.execute("show session status like 'ssl_cipher%'");
+            print("ciphers %r" % cur.fetchall())
+
     @unittest2.skipUnless(sys.version_info[0:2] >= (3,2), "required py-3.2")
     def test_no_delay_warning(self):
         current_db = self.databases[0].copy()
