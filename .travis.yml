@@ -16,6 +16,11 @@ env:
         - TOX_ENV=pypy
         - TOX_ENV=pypy3
 
+addons:
+    apt:
+       packages:
+           - libaio-dev
+
 #matrix:
 #    include:
 #        - addons:
