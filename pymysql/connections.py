@@ -1022,7 +1022,7 @@ class Connection(object):
                 try:
                     self.socket = ssl.wrap_socket(self.socket, keyfile=self.key,
                                                   certfile=self.cert,
-                                                  ssl_version=ssl.PROTOCOL_TLSv1,
+                                                  ssl_version=(ssl.PROTOCOL_SSLv23 | ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3),
                                                   cert_reqs=cert_reqs,
                                                   ca_certs=self.ca,
                                                   ciphers=self.cipher)
@@ -1031,7 +1031,7 @@ class Connection(object):
                         warnings.warn('ssl option cipher not supported in this python version')
                     self.socket = ssl.wrap_socket(self.socket, keyfile=self.key,
                                                   certfile=self.cert,
-                                                  ssl_version=ssl.PROTOCOL_TLSv1,
+                                                  ssl_version=(ssl.PROTOCOL_SSLv23 | ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3),
                                                   cert_reqs=cert_reqs,
                                                   ca_certs=self.ca)
 
