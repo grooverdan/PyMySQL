@@ -1017,7 +1017,7 @@ class Connection(object):
                 ssl.socket = ctx.wrap_socket(self.socket)
             except AttributeError:
                 if self.capath:
-                   raise NotImplementedError('ssl option capath not supported in this python version')
+                   warnings.warn('ssl option capath not supported in this python version')
                 cert_reqs = ssl.CERT_NONE if self.ca is None else ssl.CERT_REQUIRED
                 try:
                     self.socket = ssl.wrap_socket(self.socket, keyfile=self.key,
@@ -1028,7 +1028,7 @@ class Connection(object):
                                                   ciphers=self.cipher)
                 except TypeError:
                     if self.cipher is not None:
-                        raise NotImplementedError('ssl option cipher not supported in this python version')
+                        warnings.warn('ssl option cipher not supported in this python version')
                     self.socket = ssl.wrap_socket(self.socket, keyfile=self.key,
                                                   certfile=self.cert,
                                                   ssl_version=ssl.PROTOCOL_TLSv1,
