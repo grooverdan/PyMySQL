@@ -69,10 +69,10 @@ install:
       fi
     - if [ -n "${PAMCLEAR}" ]; then
           echo -e '[mysqld]\n\nplugin-load-add=auth_pam.so\npam-use-cleartext-plugin' | sudo tee -a /etc/mysql/conf.d/pam-cleartext.cnf;
-          sudo service mysql restart --pam-use-cleartext-plugin;
-          export PASSWORD=travis;
-          export PAMSERVICE=chfn;
+          sudo service mysql restart --loose-plugin-load-add=auth_pam.so --loose-pam-use-cleartext-plugin;
       fi
+    - export PASSWORD=travis;
+    - export PAMSERVICE=chfn;
     - pip install -U tox coveralls
 
 before_script:
