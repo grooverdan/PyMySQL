@@ -69,6 +69,7 @@ install:
       fi
     - if [ -n "${PAMCLEAR}" ]; then
           echo -e '[mysqld]\n\nplugin-load-add=auth_pam.so\npam-use-cleartext-plugin' | sudo tee -a /etc/mysql/conf.d/pam-cleartext.cnf;
+          sudo mysql_upgrade;
           sudo service mysql restart;
           sudo cat /var/log/daemon.log;
           sudo cat /var/log/syslog;
