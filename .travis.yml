@@ -66,6 +66,7 @@ matrix:
 install:
     - set -x
     - set -v
+    - export DEBIAN_SCRIPT_DEBUG=1
     - if [ -n "${EXTRAPKG}" ]; then
           sudo apt-get install ${EXTRAPKG};
       fi
