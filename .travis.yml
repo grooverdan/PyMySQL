@@ -71,15 +71,11 @@ install:
           sudo apt-get install ${EXTRAPKG};
       fi
     - if [ -n "${PAMCLEAR}" ]; then
-          echo -e '[mysqld]\n\nplugin-load-add=auth_pam.so\npam-use-cleartext-plugin'  sudo tee -a /etc/mysql/conf.d/pam-cleartext.cnf;
+          echo -e '[mysqld]\n\npam-use-cleartext-plugin' | sudo tee -a /etc/mysql/conf.d/pam-cleartext.cnf;
           sudo mysql_upgrade --force;
-          sudo service mysql stop;
-          sudo /etc/init.d/mysql start --plugin-load-add=auth_pam.so;
-          sudo cat /var/log/daemon.log;
+          mysql -u root -e "install plugin install plugin pam soname 'auth_pam.so'";
+          sudo service mysql restart;
           sudo cat /var/log/syslog;
-          sudo cat /etc/init.d/mysql;
-          cat /proc/`pidof mysqld`/cmdline | tr '\0' ' ';
-          cat /proc/`pidof mysqld_safe`/cmdline | tr '\0' ' ';
       fi
     - find /etc/mysql -type f -printf "#--%p--\n" -exec cat {} \;
     - export PASSWORD=travis;
