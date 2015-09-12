@@ -2,8 +2,8 @@
 branch = True
 source =
     pymysql
-#omit = pymysql/tests/*
-omit = pymysql/tests/thirdparty/test_MySQLdb/*
+omit = pymysql/tests/*
+       pymysql/tests/thirdparty/test_MySQLdb/*
 
 [report]
 exclude_lines =
