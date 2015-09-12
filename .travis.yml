@@ -64,6 +64,8 @@ matrix:
 # really only need libaio1 for DB builds however libaio-dev is whitelisted for container builds and liaio1 isn't
 
 install:
+    - set -x
+    - set -v
     - if [ -n "${EXTRAPKG}" ]; then
           sudo apt-get install ${EXTRAPKG};
       fi
@@ -77,6 +79,7 @@ install:
           sudo cat /var/log/syslog;
           sudo cat /etc/init.d/mysql;
           cat /proc/`pidof mysqld`/cmdline | tr '\0' ' ';
+          cat /proc/`pidof mysqld_safe`/cmdline | tr '\0' ' ';
       fi
     - find /etc/mysql -type f -printf "#--%p--\n" -exec cat {} \;
     - export PASSWORD=travis;
