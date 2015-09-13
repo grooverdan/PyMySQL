@@ -270,7 +270,7 @@ class TestAuthentication(base.PyMySQLTestCase):
         db = self.db.copy()
         import os
         db['password'] = os.environ.get('PASSWORD')
-
+        pymysql.connections.DEBUG = True
         with TempUser(self.connections[0].cursor(), TestAuthentication.osuser + '@localhost',
                       self.databases[0]['db'], 'pam', os.environ.get('PAMSERVICE')) as u:
             try:
@@ -280,6 +280,7 @@ class TestAuthentication(base.PyMySQLTestCase):
             # else we had 'bad guess at password' work with pam. Well cool
             with self.assertRaises(pymysql.err.OperationalError):
                 pymysql.connect(user=TestAuthentication.osuser + '@localhost', plugin_map={b'mysql_cleartext_password': TestAuthentication.DefectiveHandler}, **self.db)
+        pymysql.connections.DEBUG = False
 
     # select old_password("crummy p\tassword");
     #| old_password("crummy p\tassword") |
