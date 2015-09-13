@@ -274,12 +274,15 @@ class TestAuthentication(base.PyMySQLTestCase):
         with TempUser(self.connections[0].cursor(), TestAuthentication.osuser + '@localhost',
                       self.databases[0]['db'], 'pam', os.environ.get('PAMSERVICE')) as u:
             try:
-               c = pymysql.connect(user=TestAuthentication.osuser, **db)
+                c = pymysql.connect(user=TestAuthentication.osuser, **db)
+                db['password'] = 'very bad guess at password'
+                with self.assertRaises(pymysql.err.OperationalError):
+                    pymysql.connect(user=TestAuthentication.osuser, plugin_map={b'mysql_cleartext_password': TestAuthentication.DefectiveHandler}, **self.db)
             except pymysql.OperationalError as e:
-               self.assertEqual(1045, e.args[0])
+                self.assertEqual(1045, e.args[0])
             # else we had 'bad guess at password' work with pam. Well cool
-            with self.assertRaises(pymysql.err.OperationalError):
-                pymysql.connect(user=TestAuthentication.osuser, plugin_map={b'mysql_cleartext_password': TestAuthentication.DefectiveHandler}, **self.db)
+                with self.assertRaises(pymysql.err.OperationalError):
+                    pymysql.connect(user=TestAuthentication.osuser, plugin_map={b'mysql_cleartext_password': TestAuthentication.DefectiveHandler}, **self.db)
         pymysql.connections.DEBUG = False
 
     # select old_password("crummy p\tassword");
