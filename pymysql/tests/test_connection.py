@@ -270,7 +270,6 @@ class TestAuthentication(base.PyMySQLTestCase):
         db = self.db.copy()
         import os
         db['password'] = os.environ.get('PASSWORD')
-        pymysql.connections.DEBUG = True
         cur = self.connections[0].cursor()
         try:
             cur.execute('show grants for ' + TestAuthentication.osuser + '@localhost')
@@ -295,7 +294,6 @@ class TestAuthentication(base.PyMySQLTestCase):
         if grants:
             # recreate the user
             cur.execute(grants)
-        pymysql.connections.DEBUG = False
 
     # select old_password("crummy p\tassword");
     #| old_password("crummy p\tassword") |
