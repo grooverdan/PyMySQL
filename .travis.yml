@@ -21,7 +21,7 @@ matrix:
       python: "2.7"
 
     - env:
-        - DB=5.6.37
+        - DB=5.6.39
       python: "3.3"
       addons:
         apt:
@@ -30,7 +30,7 @@ matrix:
             - libnuma-dev
 
     - env:
-        - DB=5.7.19
+        - DB=5.7.21
       python: "3.4"
       addons:
         apt:
