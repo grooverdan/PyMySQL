@@ -24,10 +24,28 @@ matrix:
 
     - env:
         - DB=5.7
-      python: "3.4"
+      python: "3.7-dev"
       services:
         - docker
 
+    - env:
+        - DB=5.6
+      python: "3.5"
+      services:
+        - docker
+
+    - env:
+        - DB=5.5
+      python: "3.5"
+      services:
+        - docker
+
+    - env:
+        - DBTARBALL=https://downloads.mysql.com/archives/get/file/mysql-5.1.72-linux-x86_64-glibc23.tar.gz
+      python: "2.7"
+      cache:
+        directories:
+          - /home/travis/tarballcache
 
 # different py version from 5.6 and 5.7 as cache seems to be based on py version
 # http://dev.mysql.com/downloads/mysql/5.7.html has latest development release version
@@ -45,6 +63,12 @@ script:
   - coverage run ./runtests.py
   - if [ ! -z "${DB}" ];
     then docker logs mysqld;
+    fi
+  - if [ -f "${HOME}/mysqld.pid" ];
+    then kill $(cat "${HOME}/mysqld.pid");
+    fi
+  - if [ -f "${HOME}/mysqld.err" ];
+    then cat "${HOME}/mysqld.err";
     fi
 
 after_success:
