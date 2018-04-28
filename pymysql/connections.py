@@ -1492,7 +1492,7 @@ class MySQLResult(object):
         # After much reading on the MySQL protocol, it appears that there is,
         # in fact, no way to stop MySQL from sending all the data after
         # executing a query, so we just spin, and wait for an EOF packet.
-        while self.unbuffered_active:
+        while self.unbuffered_active and self.connection._sock:
             packet = self.connection._read_packet()
             if self._check_packet_is_eof(packet):
                 self.unbuffered_active = False
