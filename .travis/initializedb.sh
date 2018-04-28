@@ -35,6 +35,7 @@ if [ ! -z "${DB}" ]; then
 
     if [ $DB == 'mysql:8.0' ]; then
         WITH_PLUGIN='with mysql_native_password'
+        mysql -e 'SET GLOBAL local_infile=on'
     else
         WITH_PLUGIN=''
     fi
