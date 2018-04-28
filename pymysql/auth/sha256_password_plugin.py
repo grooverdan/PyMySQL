@@ -23,7 +23,7 @@ def _xor_password(password, salt):
 def _sha256_rsa_crypt(password, salt, public_key):
     if not HAVE_CRYPTOGRAPHY:
         raise OperationalError("cryptography module not found for sha256_password_plugin")
-    message = _xor_password(password + b'\0', salt)
+    message = _xor_password(password.encode('latin1') + b'\0', salt)
     rsa_key = serialization.load_pem_public_key(public_key, default_backend())
     return rsa_key.encrypt(
         message.decode('latin1').encode('latin1'), padding.OAEP(
