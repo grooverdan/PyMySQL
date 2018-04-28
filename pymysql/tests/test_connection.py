@@ -460,7 +460,10 @@ class TestConnection(base.PyMySQLTestCase):
 
     def test_set_charset(self):
         c = self.connect()
-        c.set_charset('utf8')
+        if self.mysql_server_is(c, (8, 0, 0)):
+            c.set_charset('utf8mb4')
+        else:
+            c.set_charset('utf8')
         # TODO validate setting here
 
     def test_defer_connect(self):
