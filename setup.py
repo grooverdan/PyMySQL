@@ -24,6 +24,9 @@ setup(
     long_description=readme,
     license="MIT",
     packages=find_packages(),
+    extras_require={
+        'auth_sha256': ['cryptography>=2.1'],
+    },
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Programming Language :: Python :: 2',
