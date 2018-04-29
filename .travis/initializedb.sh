@@ -33,6 +33,11 @@ if [ ! -z "${DB}" ]; then
         CHARSET='utf8mb4'
         WITH_PLUGIN='with mysql_native_password'
         mysql -e 'SET GLOBAL local_infile=on'
+        docker cp mysqld:/var/lib/mysql/public_key.pem "${HOME}"
+        docker cp mysqld:/var/lib/mysql/ca.pem "${HOME}"
+        docker cp mysqld:/var/lib/mysql/server-cert.pem "${HOME}"
+        docker cp mysqld:/var/lib/mysql/client-key.pem "${HOME}"
+        docker cp mysqld:/var/lib/mysql/client-cert.pem "${HOME}"
     else
         CHARSET='utf8'
         WITH_PLUGIN=''
