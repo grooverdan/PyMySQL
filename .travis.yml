@@ -35,6 +35,13 @@ matrix:
       python: "3.4"
     - env:
         - DB=mysql:8.0
+      python: "2.7"
+    - env:
+        - DB=mysql:8.0
+      python: "3.7-dev"
+  allowed_failures:
+    - env:
+        - DB=mysql:8.0
       python: "3.7-dev"
 
 # different py version from 5.6 and 5.7 as cache seems to be based on py version
