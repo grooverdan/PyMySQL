@@ -30,15 +30,17 @@ if [ ! -z "${DB}" ]; then
     echo -e "[client]\nhost = 127.0.0.1\n" > "${HOME}"/.my.cnf
 
     mysql -e 'select VERSION()'
-    mysql -uroot -e 'create database test1 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;'
-    mysql -uroot -e 'create database test2 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;'
-
     if [ $DB == 'mysql:8.0' ]; then
+        CHARSET='utf8mb4'
         WITH_PLUGIN='with sha256_password'
         mysql -e 'SET GLOBAL local_infile=on'
     else
+        CHARSET='utf8'
         WITH_PLUGIN=''
     fi
+    mysql -uroot -e "create database test1 DEFAULT CHARACTER SET ${CHARSET} DEFAULT COLLATE ${CHARSET}_general_ci;"
+    mysql -uroot -e "create database test2 DEFAULT CHARACTER SET ${CHARSET} DEFAULT COLLATE ${CHARSET}_general_ci;"
+
     mysql -u root -e "create user test2           identified ${WITH_PLUGIN} by 'some password'; grant all on test2.* to test2;"
     mysql -u root -e "create user test2@localhost identified ${WITH_PLUGIN} by 'some password'; grant all on test2.* to test2@localhost;"
 
