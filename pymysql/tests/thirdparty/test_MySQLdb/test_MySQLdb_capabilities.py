@@ -20,6 +20,9 @@ class test_MySQLdb(capabilities.DatabaseTest):
 
     leak_test = False
 
+    def setUp(self):
+        super(test_MySQLdb, self).setUp()
+
     def quote_identifier(self, ident):
         return "`%s`" % ident
 
