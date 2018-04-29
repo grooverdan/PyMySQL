@@ -30,14 +30,16 @@ if [ ! -z "${DB}" ]; then
     mysql -e 'select VERSION()'
 
     if [ $DB == 'mysql:8.0' ]; then
+        CHARSET='utf8mb4'
         WITH_PLUGIN='with mysql_native_password'
         mysql -e 'SET GLOBAL local_infile=on'
     else
+        CHARSET='utf8'
         WITH_PLUGIN=''
     fi
 
-    mysql -uroot -e 'create database test1 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;'
-    mysql -uroot -e 'create database test2 DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;'
+    mysql -uroot -e "create database test1 DEFAULT CHARACTER SET ${CHARSET}"
+    mysql -uroot -e "create database test2 DEFAULT CHARACTER SET ${CHARSET}"
 
     mysql -u root -e "create user test2           identified ${WITH_PLUGIN} by 'some password'; grant all on test2.* to test2;"
     mysql -u root -e "create user test2@localhost identified ${WITH_PLUGIN} by 'some password'; grant all on test2.* to test2@localhost;"
