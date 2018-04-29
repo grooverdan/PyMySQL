@@ -38,8 +38,8 @@ if [ ! -z "${DB}" ]; then
         CHARSET='utf8'
         WITH_PLUGIN=''
     fi
-    mysql -uroot -e "create database test1 DEFAULT CHARACTER SET ${CHARSET} DEFAULT COLLATE ${CHARSET}_general_ci;"
-    mysql -uroot -e "create database test2 DEFAULT CHARACTER SET ${CHARSET} DEFAULT COLLATE ${CHARSET}_general_ci;"
+    mysql -uroot -e "create database test1 DEFAULT CHARACTER SET ${CHARSET};"
+    mysql -uroot -e "create database test2 DEFAULT CHARACTER SET ${CHARSET};"
 
     mysql -u root -e "create user test2           identified ${WITH_PLUGIN} by 'some password'; grant all on test2.* to test2;"
     mysql -u root -e "create user test2@localhost identified ${WITH_PLUGIN} by 'some password'; grant all on test2.* to test2@localhost;"
