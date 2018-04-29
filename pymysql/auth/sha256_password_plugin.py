@@ -13,17 +13,17 @@ except ImportError:
 
 
 def _xor_password(password, salt):
-    password_bytes = bytearray(password, 'ascii')
+    password_bytes = bytearray(password, 'ascii') + b'\0'
     salt_len = len(salt)
     for i in range(len(password_bytes)):
-        password_bytes[i] ^= ord(salt[i % salt_len])
+        password_bytes[i] ^= salt[i % salt_len]
     return password_bytes
 
 
 def _sha256_rsa_crypt(password, salt, public_key):
     if not HAVE_CRYPTOGRAPHY:
         raise OperationalError("cryptography module not found for sha256_password_plugin")
-    message = _xor_password(password.encode('ascii') + b'\0', salt)
+    message = _xor_password(password, salt)
     rsa_key = serialization.load_pem_public_key(public_key, default_backend())
     return rsa_key.encrypt(
         message.decode('latin1').encode('latin1'), padding.OAEP(
