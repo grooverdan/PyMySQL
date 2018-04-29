@@ -18,7 +18,6 @@ class test_MySQLdb(capabilities.DatabaseTest):
                           use_unicode=True, binary_prefix=True,
                           charset='utf8', sql_mode="ANSI,STRICT_TRANS_TABLES,TRADITIONAL"))
 
-    create_table_extra = "ENGINE=INNODB CHARACTER SET UTF8"
     leak_test = False
 
     def quote_identifier(self, ident):

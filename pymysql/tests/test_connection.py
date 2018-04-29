@@ -465,7 +465,10 @@ class TestConnection(base.PyMySQLTestCase):
 
     def test_set_charset(self):
         c = self.connect()
-        c.set_charset('utf8')
+        if self.mysql_server_is(c, (8, 0, 0)):
+            c.set_charset('utf8mb4')
+        else:
+            c.set_charset('utf8')
         # TODO validate setting here
 
     def test_defer_connect(self):
@@ -514,7 +517,11 @@ class TestEscape(base.PyMySQLTestCase):
 
         self.assertEqual(con.escape("foo'bar"), "'foo\\'bar'")
         # added NO_AUTO_CREATE_USER as not including it in 5.7 generates warnings
-        cur.execute("SET sql_mode='NO_BACKSLASH_ESCAPES,NO_AUTO_CREATE_USER'")
+        # mysql-8.0 removes the option however
+        if self.mysql_server_is(con, (8, 0, 0)):
+            cur.execute("SET sql_mode='NO_BACKSLASH_ESCAPES'")
+        else:
+            cur.execute("SET sql_mode='NO_BACKSLASH_ESCAPES,NO_AUTO_CREATE_USER'")
         self.assertEqual(con.escape("foo'bar"), "'foo''bar'")
 
     def test_escape_builtin_encoders(self):

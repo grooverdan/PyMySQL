@@ -24,6 +24,10 @@ class DatabaseTest(unittest.TestCase):
 
     def setUp(self):
         db = self.db_module.connect(*self.connect_args, **self.connect_kwargs)
+        # MySQL-8.0 throws warnings for use of UTF8
+        if int(db.server_version.split('.', 1)[0]) >= 8:
+            self.create_table_extra = "ENGINE=INNODB CHARACTER SET UTF8MB4"
+            self.connect_kwargs['charset'] = 'utf8mb4'
         self.connection = db
         self.cursor = db.cursor()
         self.BLOBText = ''.join([chr(i) for i in range(256)] * 100);

@@ -410,10 +410,14 @@ class TestGitHubIssues(base.PyMySQLTestCase):
     def test_issue_364(self):
         """ Test mixed unicode/binary arguments in executemany. """
         conn = pymysql.connect(charset="utf8", **self.databases[0])
+        if self.mysql_server_is(conn, (8, 0, 0)):
+            charset='utf8mb4'
+        else:
+            charset='utf8'
         self.safe_create_table(
             conn, "issue364",
             "create table issue364 (value_1 binary(3), value_2 varchar(3)) "
-            "engine=InnoDB default charset=utf8")
+            "engine=InnoDB default charset=%s" % charset)
 
         sql = "insert into issue364 (value_1, value_2) values (_binary %s, %s)"
         usql = u"insert into issue364 (value_1, value_2) values (_binary %s, %s)"
@@ -440,12 +444,16 @@ class TestGitHubIssues(base.PyMySQLTestCase):
     def test_issue_363(self):
         """ Test binary / geometry types. """
         conn = pymysql.connect(charset="utf8", **self.databases[0])
+        if self.mysql_server_is(conn, (8, 0, 0)):
+            charset='utf8mb4'
+        else:
+            charset='utf8'
         self.safe_create_table(
             conn, "issue363",
             "CREATE TABLE issue363 ( "
             "id INTEGER PRIMARY KEY, geom LINESTRING NOT NULL, "
             "SPATIAL KEY geom (geom)) "
-            "ENGINE=MyISAM default charset=utf8")
+            "ENGINE=MyISAM default charset=%s" % charset)
 
         cur = conn.cursor()
         query = ("INSERT INTO issue363 (id, geom) VALUES"
