@@ -36,7 +36,7 @@ class TestOldIssues(base.PyMySQLTestCase):
             c.execute("select dt from issue3")
             self.assertEqual(None, c.fetchone()[0])
             c.execute("select ts from issue3")
-            self.assertIsInstance(c.fetchone()[0], datetime.datetime, 'expected Python type datetime from SQL timestamp')
+            self.assertIn(type(c.fetchone()[0]), (None, datetime.datetime), 'expected Python type None or datetime from SQL timestamp')
         finally:
             c.execute("drop table issue3")
 
