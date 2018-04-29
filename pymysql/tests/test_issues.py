@@ -451,7 +451,7 @@ class TestGitHubIssues(base.PyMySQLTestCase):
         self.safe_create_table(
             conn, "issue363",
             "CREATE TABLE issue363 ( "
-            "id INTEGER PRIMARY KEY, geom LINESTRING NOT NULL, "
+            "id INTEGER PRIMARY KEY, geom LINESTRING NOT NULL *!80003 SRID 0 */, "
             "SPATIAL KEY geom (geom)) "
             "ENGINE=MyISAM default charset=%s" % charset)
 
