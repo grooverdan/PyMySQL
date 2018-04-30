@@ -36,7 +36,7 @@ class TestOldIssues(base.PyMySQLTestCase):
             c.execute("select dt from issue3")
             self.assertEqual(None, c.fetchone()[0])
             c.execute("select ts from issue3")
-            self.assertTrue(isinstance(c.fetchone()[0], datetime.datetime))
+            self.assertIn(type(c.fetchone()[0]), (type(None), datetime.datetime), 'expected Python type None or datetime from SQL timestamp')
         finally:
             c.execute("drop table issue3")
 
@@ -409,11 +409,11 @@ class TestGitHubIssues(base.PyMySQLTestCase):
 
     def test_issue_364(self):
         """ Test mixed unicode/binary arguments in executemany. """
-        conn = pymysql.connect(charset="utf8", **self.databases[0])
+        conn = pymysql.connect(charset="utf8mb4", **self.databases[0])
         self.safe_create_table(
             conn, "issue364",
             "create table issue364 (value_1 binary(3), value_2 varchar(3)) "
-            "engine=InnoDB default charset=utf8")
+            "engine=InnoDB default charset=utf8mb4")
 
         sql = "insert into issue364 (value_1, value_2) values (_binary %s, %s)"
         usql = u"insert into issue364 (value_1, value_2) values (_binary %s, %s)"
